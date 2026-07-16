@@ -42,6 +42,7 @@ curl http://127.0.0.1:4000/health
 
 - 기능 개발과 초기 푸시는 `develop`에서 진행합니다.
 - `develop`에서 `main`으로 PR이 병합되면 시맨틱 버전과 GitHub Release가 생성됩니다.
+- Vercel은 `main`만 프로덕션으로 배포하며 `develop`과 기능 브랜치 빌드는 생략합니다.
 - GitHub Pages는 Oracle 전환 중에도 웹 프리뷰 배포를 유지합니다.
 - Oracle 배포는 필요한 GitHub Actions Secret을 등록하고 `ORACLE_DEPLOY_ENABLED=true`로 바꾼 뒤 활성화됩니다.
 
