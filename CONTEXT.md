@@ -23,8 +23,9 @@
 
 ## Delivery model
 
-- `develop`: 통합 개발 및 CI
+- `develop`: 통합 개발, CI, Vercel 고정 브랜치 Preview 배포
 - `main`: 보호된 릴리스 브랜치
+- Vercel은 `develop`과 `main`만 빌드하고 그 외 브랜치 배포는 건너뛴다.
 - `main` 업데이트: semantic-release 버전 태그와 GitHub Release 생성
 - GitHub Pages: 전환기 웹 프리뷰
 - Oracle VM: 저장소 변수로 명시적으로 활성화하는 조건부 자동배포
