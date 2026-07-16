@@ -43,6 +43,7 @@ sudo install -d -o "$deploy_user" -g "$deploy_group" \
   "$deploy_root/apps/web/out" \
   "$deploy_root/apps/api" \
   "$deploy_root/shared"
+sudo chown -R "$deploy_user:$deploy_group" "$deploy_root/apps"
 
 if [[ ! -f "$deploy_root/apps/web/out/index.html" ]]; then
   sudo tee "$deploy_root/apps/web/out/index.html" >/dev/null <<'HTML'
