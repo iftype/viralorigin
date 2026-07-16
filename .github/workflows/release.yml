@@ -66,8 +66,9 @@ jobs:
       - name: Assemble deployment artifact
         shell: bash
         run: |
-          mkdir -p .deploy/apps/web .deploy/apps/api
+          mkdir -p .deploy/apps/web .deploy/apps/api .deploy/apps/admin
           cp -R apps/web/out .deploy/apps/web/out
+          cp -R apps/admin/out .deploy/apps/admin/out
           cp -R apps/api/dist .deploy/apps/api/dist
           cp apps/api/package.json .deploy/apps/api/package.json
           cp package.json pnpm-lock.yaml pnpm-workspace.yaml .deploy/
@@ -125,3 +126,46 @@ jobs:
           rsync -az --delete --no-owner --no-group --exclude 'shared/' -e "ssh -p $SSH_PORT" .deploy/ "$SSH_TARGET:$ORACLE_DEPLOY_PATH/"
           ssh -p "$SSH_PORT" "$SSH_TARGET" \
             "cd '$ORACLE_DEPLOY_PATH' && corepack enable && pnpm install --prod --frozen-lockfile --filter @origin/api... && systemctl --user restart origin-api"
+
+  deploy-admin:
+    name: Deploy Admin to iftype.store
+    needs: release
+    if: ${{ vars.ADMIN_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Download deployment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: origin-${{ needs.release.outputs.version }}
+          path: .deploy
+
+      - name: Configure SSH
+        env:
+          ADMIN_ORACLE_HOST: ${{ secrets.ADMIN_ORACLE_HOST }}
+          ADMIN_ORACLE_SSH_KEY: ${{ secrets.ADMIN_ORACLE_SSH_KEY }}
+          ADMIN_ORACLE_SSH_PORT: ${{ secrets.ADMIN_ORACLE_SSH_PORT }}
+        shell: bash
+        run: |
+          test -n "$ADMIN_ORACLE_HOST"
+          test -n "$ADMIN_ORACLE_SSH_KEY"
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$ADMIN_ORACLE_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keyscan -p "${ADMIN_ORACLE_SSH_PORT:-22}" "$ADMIN_ORACLE_HOST" >> "$HOME/.ssh/known_hosts"
+
+      - name: Upload static admin
+        env:
+          ADMIN_ORACLE_DEPLOY_PATH: ${{ secrets.ADMIN_ORACLE_DEPLOY_PATH }}
+          ADMIN_ORACLE_HOST: ${{ secrets.ADMIN_ORACLE_HOST }}
+          ADMIN_ORACLE_SSH_PORT: ${{ secrets.ADMIN_ORACLE_SSH_PORT }}
+          ADMIN_ORACLE_USER: ${{ secrets.ADMIN_ORACLE_USER }}
+        shell: bash
+        run: |
+          test -n "$ADMIN_ORACLE_DEPLOY_PATH"
+          test -n "$ADMIN_ORACLE_USER"
+          SSH_TARGET="$ADMIN_ORACLE_USER@$ADMIN_ORACLE_HOST"
+          SSH_PORT="${ADMIN_ORACLE_SSH_PORT:-22}"
+          ssh -p "$SSH_PORT" "$SSH_TARGET" "mkdir -p '$ADMIN_ORACLE_DEPLOY_PATH'"
+          rsync -az --delete --no-owner --no-group -e "ssh -p $SSH_PORT" \
+            .deploy/apps/admin/out/ "$SSH_TARGET:$ADMIN_ORACLE_DEPLOY_PATH/"
