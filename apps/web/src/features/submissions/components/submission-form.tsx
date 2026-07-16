@@ -24,10 +24,12 @@ export function SubmissionForm() {
   const [activeType, setActiveType] = useState<SubmissionType>(
     requestedType === "origin" ? "origin" : "request",
   );
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState<"server" | "local" | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setIsSubmitting(true);
     const form = new FormData(event.currentTarget);
     const submission: Submission = {
       id: `submission-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -39,21 +41,39 @@ export function SubmissionForm() {
       createdAt: new Date().toISOString(),
     };
 
-    let submissions: Submission[] = [];
+    let result: "server" | "local" = "server";
     try {
-      submissions = JSON.parse(
-        window.localStorage.getItem(submissionStorageKey) ?? "[]",
-      ) as Submission[];
+      const response = await fetch("/api/v1/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: activeType === "origin" ? "origin_tip" : "meme_request",
+          title: submission.title,
+          author: submission.author,
+          sourceUrl: submission.sourceUrl,
+          description: submission.description,
+        }),
+      });
+      if (!response.ok) throw new Error("submission failed");
     } catch {
-      submissions = [];
+      result = "local";
+      let submissions: Submission[] = [];
+      try {
+        submissions = JSON.parse(
+          window.localStorage.getItem(submissionStorageKey) ?? "[]",
+        ) as Submission[];
+      } catch {
+        submissions = [];
+      }
+      window.localStorage.setItem(
+        submissionStorageKey,
+        JSON.stringify([...submissions, submission]),
+      );
     }
-    window.localStorage.setItem(
-      submissionStorageKey,
-      JSON.stringify([...submissions, submission]),
-    );
 
     event.currentTarget.reset();
-    setSubmitted(true);
+    setSubmitted(result);
+    setIsSubmitting(false);
   }
 
   const isOrigin = activeType === "origin";
@@ -70,7 +90,7 @@ export function SubmissionForm() {
           type="button"
           onClick={() => {
             setActiveType("request");
-            setSubmitted(false);
+            setSubmitted(null);
           }}
         >
           <HelpCircle className="size-5" aria-hidden="true" />
@@ -88,7 +108,7 @@ export function SubmissionForm() {
           type="button"
           onClick={() => {
             setActiveType("origin");
-            setSubmitted(false);
+            setSubmitted(null);
           }}
         >
           <Lightbulb className="size-5" aria-hidden="true" />
@@ -148,18 +168,22 @@ export function SubmissionForm() {
 
         <button
           className="mt-5 w-full rounded-full bg-black px-5 py-3.5 text-sm font-black text-white"
+          disabled={isSubmitting}
           type="submit"
         >
-          {isOrigin ? "원본 정보 등록" : "알고 싶은 항목 등록"}
+          {isSubmitting ? "등록 중..." : isOrigin ? "원본 정보 등록" : "알고 싶은 항목 등록"}
         </button>
 
         {submitted && (
           <p className="mt-4 flex items-center justify-center gap-2 text-sm font-black text-[#14804a]">
-            <Check className="size-4" aria-hidden="true" /> 등록됐어요. 검토 목록에 추가할게요.
+            <Check className="size-4" aria-hidden="true" />
+            {submitted === "server"
+              ? "등록됐어요. 운영자 검토 목록에 추가했어요."
+              : "연결이 불안정해 이 브라우저에 임시 저장했어요."}
           </p>
         )}
         <p className="mt-3 text-center text-[0.7rem] leading-5 text-black/35">
-          현재 프로토타입에서는 이 브라우저에만 저장됩니다.
+          등록 내용은 운영자 검토 후 사전에 반영됩니다.
         </p>
       </form>
     </div>

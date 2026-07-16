@@ -25,26 +25,45 @@ export function ProposalButton({
   const [isOpen, setIsOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
 
+    const proposal = {
+      id: makeLocalId("proposal"),
+      memeId,
+      memeTitle,
+      section,
+      author: String(form.get("author") ?? "익명").trim() || "익명",
+      body: String(form.get("body") ?? "").trim(),
+      evidenceUrl: String(form.get("evidenceUrl") ?? "").trim() || undefined,
+      createdAt: new Date().toISOString(),
+      agree: 0,
+      disagree: 0,
+      comments: [],
+    };
+
     writeProposals([
       ...readProposals(),
-      {
-        id: makeLocalId("proposal"),
-        memeId,
-        memeTitle,
-        section,
-        author: String(form.get("author") ?? "익명").trim() || "익명",
-        body: String(form.get("body") ?? "").trim(),
-        evidenceUrl: String(form.get("evidenceUrl") ?? "").trim() || undefined,
-        createdAt: new Date().toISOString(),
-        agree: 0,
-        disagree: 0,
-        comments: [],
-      },
+      proposal,
     ]);
+
+    try {
+      await fetch("/api/v1/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: "feedback",
+          title: `${memeTitle} · ${proposalSectionLabels[section]} 수정 제안`,
+          author: proposal.author,
+          description: proposal.body,
+          sourceUrl: proposal.evidenceUrl,
+          subjectId: memeId,
+        }),
+      });
+    } catch {
+      // 로컬 토론은 네트워크 상태와 무관하게 유지합니다.
+    }
 
     setSubmitted(true);
     setIsOpen(false);
@@ -136,7 +155,7 @@ export function ProposalButton({
                 토론에 제안 등록
               </button>
               <p className="text-center text-[0.7rem] leading-5 text-black/35">
-                프로토타입에서는 이 브라우저에만 저장됩니다.
+                토론은 이 브라우저에 남고, 제안 내용은 운영자 검토 목록에도 전달됩니다.
               </p>
             </form>
           </section>
