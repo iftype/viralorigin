@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 const repositoryName = process.env.GITHUB_REPOSITORY?.split("/")[1];
@@ -16,7 +17,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   turbopack: {
-    root: process.cwd(),
+    root: path.resolve(process.cwd(), "../.."),
   },
 };
 
