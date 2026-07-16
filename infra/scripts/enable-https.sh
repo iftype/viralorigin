@@ -40,7 +40,7 @@ sudo certbot --nginx \
   --email "$email" \
   "${domain_args[@]}"
 
-sudo certbot renew --dry-run
+sudo certbot renew --dry-run --no-random-sleep-on-renew
 
 echo "HTTPS is enabled for: ${domains[*]}"
 echo "Certbot renewal is managed automatically by the snap systemd timer."
