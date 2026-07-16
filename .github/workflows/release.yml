@@ -1,0 +1,126 @@
+name: Release and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Version and Build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify workspace
+        run: pnpm lint
+
+      - name: Create semantic version and GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm release
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(git tag --points-at HEAD --sort=-version:refname | head -n 1)"
+          if [ -z "$VERSION" ]; then
+            VERSION="sha-$(git rev-parse --short HEAD)"
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build all apps
+        env:
+          NEXT_PUBLIC_APP_VERSION: ${{ steps.version.outputs.value }}
+        run: pnpm build
+
+      - name: Assemble deployment artifact
+        shell: bash
+        run: |
+          mkdir -p .deploy/apps/web .deploy/apps/api
+          cp -R apps/web/out .deploy/apps/web/out
+          cp -R apps/api/dist .deploy/apps/api/dist
+          cp apps/api/package.json .deploy/apps/api/package.json
+          cp package.json pnpm-lock.yaml pnpm-workspace.yaml .deploy/
+          echo "APP_VERSION=${{ steps.version.outputs.value }}" > .deploy/release.env
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: origin-${{ steps.version.outputs.value }}
+          path: .deploy
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy-oracle:
+    name: Deploy to Oracle VM
+    needs: release
+    if: ${{ vars.ORACLE_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Download deployment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: origin-${{ needs.release.outputs.version }}
+          path: .deploy
+
+      - name: Configure SSH
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          ORACLE_SSH_PORT: ${{ secrets.ORACLE_SSH_PORT }}
+        shell: bash
+        run: |
+          test -n "$ORACLE_HOST"
+          test -n "$ORACLE_SSH_KEY"
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$ORACLE_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keyscan -p "${ORACLE_SSH_PORT:-22}" "$ORACLE_HOST" >> "$HOME/.ssh/known_hosts"
+
+      - name: Upload release
+        env:
+          ORACLE_DEPLOY_PATH: ${{ secrets.ORACLE_DEPLOY_PATH }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_SSH_PORT: ${{ secrets.ORACLE_SSH_PORT }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        shell: bash
+        run: |
+          test -n "$ORACLE_DEPLOY_PATH"
+          test -n "$ORACLE_USER"
+          SSH_TARGET="$ORACLE_USER@$ORACLE_HOST"
+          SSH_PORT="${ORACLE_SSH_PORT:-22}"
+          ssh -p "$SSH_PORT" "$SSH_TARGET" "mkdir -p '$ORACLE_DEPLOY_PATH'"
+          rsync -az --delete -e "ssh -p $SSH_PORT" .deploy/ "$SSH_TARGET:$ORACLE_DEPLOY_PATH/"
+          ssh -p "$SSH_PORT" "$SSH_TARGET" \
+            "cd '$ORACLE_DEPLOY_PATH' && corepack enable && pnpm install --prod --frozen-lockfile --filter @origin/api... && systemctl --user restart origin-api"

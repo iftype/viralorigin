@@ -1,0 +1,15 @@
+[Unit]
+Description=Origin API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/origin/apps/api
+ExecStart=/usr/bin/node dist/index.js
+EnvironmentFile=-/opt/origin/release.env
+EnvironmentFile=-/opt/origin/shared/api.env
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
