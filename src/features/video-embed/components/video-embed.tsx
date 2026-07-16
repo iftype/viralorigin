@@ -2,7 +2,12 @@ import { ExternalLink, Play, ShieldAlert } from "lucide-react";
 
 import type { Video } from "@/types/meme";
 
-import { getYouTubeVideoId, platformLabels } from "../lib/video-url";
+import {
+  getInstagramEmbedUrl,
+  getTikTokEmbedUrl,
+  getYouTubeVideoId,
+  platformLabels,
+} from "../lib/video-url";
 
 type VideoEmbedProps = {
   video: Video;
@@ -12,35 +17,55 @@ type VideoEmbedProps = {
 export function VideoEmbed({ video }: VideoEmbedProps) {
   const youtubeId =
     video.platform === "youtube" ? getYouTubeVideoId(video.url) : null;
-  const canEmbed = Boolean(youtubeId);
+  const embedUrl =
+    video.platform === "youtube" && youtubeId
+      ? `https://www.youtube-nocookie.com/embed/${youtubeId}`
+      : video.platform === "instagram"
+        ? getInstagramEmbedUrl(video.url)
+        : video.platform === "tiktok"
+          ? getTikTokEmbedUrl(video.url)
+          : null;
+  const canEmbed = Boolean(embedUrl);
+  const isShortForm = ["instagram", "tiktok"].includes(video.platform);
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
-      <div className="relative aspect-video overflow-hidden bg-[#171719]">
-        {canEmbed ? (
-          <iframe
-            className="absolute inset-0 size-full"
-            src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
-            title={video.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-            loading="lazy"
-          />
-        ) : (
-          <a
-            className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[radial-gradient(circle_at_30%_10%,#fe2c5555,transparent_35%),radial-gradient(circle_at_80%_90%,#25f4ee44,transparent_35%)] px-7 text-center text-white"
-            href={video.url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span className="flex size-12 items-center justify-center rounded-full bg-white text-black shadow-[-3px_0_0_#25f4ee,3px_0_0_#fe2c55] transition-transform group-hover:scale-105">
-              <Play className="ml-0.5 size-4 fill-current" aria-hidden="true" />
-            </span>
-            <span className="max-w-sm text-xs leading-5 text-white/65">
-              임베드가 제한될 수 있어요. 원본 링크에서 확인해 주세요.
-            </span>
-          </a>
-        )}
+      <div className={isShortForm ? "bg-[#171719]" : undefined}>
+        <div
+          className={`relative overflow-hidden bg-[#171719] ${
+            isShortForm
+              ? "mx-auto aspect-[9/16] w-full max-w-[420px]"
+              : "aspect-video"
+          }`}
+        >
+          {embedUrl ? (
+            <iframe
+              className="absolute inset-0 size-full border-0"
+              src={embedUrl}
+              title={video.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              loading="lazy"
+            />
+          ) : (
+            <a
+              className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[radial-gradient(circle_at_30%_10%,#fe2c5555,transparent_35%),radial-gradient(circle_at_80%_90%,#25f4ee44,transparent_35%)] px-7 text-center text-white"
+              href={video.url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span className="flex size-12 items-center justify-center rounded-full bg-white text-black shadow-[-3px_0_0_#25f4ee,3px_0_0_#fe2c55] transition-transform group-hover:scale-105">
+                <Play
+                  className="ml-0.5 size-4 fill-current"
+                  aria-hidden="true"
+                />
+              </span>
+              <span className="max-w-sm text-xs leading-5 text-white/65">
+                임베드가 제한될 수 있어요. 원본 링크에서 확인해 주세요.
+              </span>
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="flex items-start justify-between gap-3 p-4 sm:p-5">
