@@ -7,7 +7,7 @@ export function SiteFooter() {
         <p>밈의 시작을 함께 기록해요.</p>
         <a
           className="inline-flex items-center gap-2 font-bold text-black/65 hover:text-black"
-          href="https://github.com/iftype/meme-origin-timeline"
+          href="https://github.com/iftype/viralorigin"
           target="_blank"
           rel="noreferrer"
         >

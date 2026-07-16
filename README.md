@@ -1,4 +1,4 @@
-# Origin — Meme Origin Timeline
+# ViralOrigin
 
 밈, 챌린지, 바이럴 영상의 원본과 확산 과정을 함께 검증하고 기록하는 참여형 사전입니다.
 
