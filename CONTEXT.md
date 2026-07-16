@@ -11,7 +11,7 @@
 - `apps/admin`: `/viral` basePath의 정적 Next.js 관리자 화면
 - `apps/api`: Fastify, TypeScript, Node.js 22
 - `infra`: Nginx reverse proxy와 systemd API 서비스 예시
-- 정적 샘플 데이터와 브라우저 로컬 참여 저장소는 API 연결 전 프로토타입 경계로 유지
+- 공개 사전과 운영자 큐는 Oracle API의 파일 저장소를 사용하고, 브라우저 로컬 참여 저장소는 토론 프로토타입에만 남긴다.
 
 ## Network boundary
 
@@ -32,4 +32,4 @@
 
 ## Next milestone
 
-공용 저장소를 선택해 수정 제안, 투표, 댓글, 신규 항목 등록을 API로 이전하고 운영자 확정 상태를 추가한다.
+공용 데이터베이스를 선택해 현재 JSON 사전·운영자 큐와 브라우저의 투표·댓글을 함께 이전한다.
