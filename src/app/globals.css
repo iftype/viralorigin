@@ -10,10 +10,6 @@
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
   margin: 0;
   background:
@@ -55,4 +51,3 @@ input {
     width: min(100% - 5rem, 1240px);
   }
 }
-
