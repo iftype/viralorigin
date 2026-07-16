@@ -18,11 +18,12 @@ Do not put any of those values in `NEXT_PUBLIC_*`, committed `.env` files, workf
 
 ## VM prerequisites
 
-1. Install Node.js 22, Corepack/pnpm, Nginx, rsync, and Git.
-2. Copy `infra/nginx/origin.conf.example` into the Nginx site configuration and replace only the domain and deploy path.
-3. Copy `infra/systemd/origin-api.service.example` to `~/.config/systemd/user/origin-api.service`, adjusting paths if needed.
-4. Create `/opt/origin/shared/api.env` with API-only values such as database credentials and allowed origins.
-5. Run `systemctl --user daemon-reload` and `systemctl --user enable origin-api`.
-6. Configure TLS before exposing the service publicly.
+1. From a checkout of this repository on the VM, run `infra/scripts/provision-oracle.sh`.
+2. Create `/opt/origin/shared/api.env` with API-only values such as database credentials and allowed origins.
+3. Point the domain's `A` record to the Oracle VM and make sure inbound TCP ports `80` and `443` are open in the Oracle Cloud security list.
+4. Run `infra/scripts/enable-https.sh DOMAIN EMAIL`. Add more domain arguments when both apex and `www` should be covered.
+5. The HTTPS script asks Certbot to update Nginx, redirect HTTP to HTTPS, and performs a renewal dry run.
+
+Certbot is installed from the officially recommended snap package. Its systemd timer renews certificates automatically before expiry.
 
 The workflow uploads the static web output, compiled API, workspace lockfile, and release version. It installs only production API dependencies on the VM and restarts `origin-api`.
