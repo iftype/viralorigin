@@ -3,7 +3,7 @@
 ## Branches
 
 - `develop`: the integration branch. Feature work lands here first and every push runs the full monorepo CI.
-- `main`: the protected release branch. Only reviewed pull requests from `develop` should merge here.
+- `main`: the protected release branch. Only pull requests from `develop` that pass CI should merge here.
 - Short-lived work can use `feat/*`, `fix/*`, or `chore/*` and target `develop`.
 
 ## Release flow
@@ -20,3 +20,10 @@
 - `feat:` creates a minor release.
 - `BREAKING CHANGE:` in a commit body creates a major release.
 - Git tags and GitHub Releases are the production version source of truth; package manifests remain private workspace metadata.
+
+## Protection policy
+
+- `main` requires a pull request, an up-to-date `CI / Verify` check, and resolved conversations.
+- Approval count is temporarily `0` because the repository currently has one collaborator and GitHub does not allow authors to approve their own pull requests.
+- Raise the required approval count to `1` as soon as another reviewer joins.
+- Force pushes and branch deletion are disabled on both `main` and `develop`.
