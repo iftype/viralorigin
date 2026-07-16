@@ -1,32 +1,41 @@
-import { Plus } from "lucide-react";
+import { MessageCircleMore, Plus } from "lucide-react";
 import Link from "next/link";
+
+import { BrandMark, buttonClassName } from "@origin/ui";
+
+import { HeaderSearch } from "./header-search";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-black/5 bg-white/90 backdrop-blur-xl">
-      <div className="page-shell flex h-16 items-center justify-between">
-        <Link className="flex items-center gap-2.5 font-black" href="/">
-          <span className="relative flex size-8 items-center justify-center rounded-xl bg-black text-sm text-white shadow-[-3px_0_0_#25f4ee,3px_0_0_#fe2c55]">
-            V
-          </span>
-          <span className="tracking-[-0.04em]">VIRALORIGIN</span>
-        </Link>
+    <header className="sticky top-0 z-50 border-b border-black/5 bg-white/92 backdrop-blur-xl">
+      <div className="page-shell py-2.5">
+        <div className="flex items-center gap-3">
+          <Link className="flex shrink-0 items-center gap-2.5 font-black" href="/">
+            <BrandMark />
+            <span className="tracking-[-0.04em]">VIRALORIGIN</span>
+          </Link>
 
-        <nav className="flex items-center gap-2 text-sm font-bold">
-          <Link
-            className="hidden rounded-full px-4 py-2 transition-colors hover:bg-black/5 sm:block"
-            href="/#explore"
-          >
-            밈 찾기
-          </Link>
-          <Link
-            className="flex items-center gap-1.5 rounded-full bg-black px-4 py-2 text-white transition-transform hover:scale-[1.02]"
-            href="/submit"
-          >
-            <Plus className="size-4" aria-hidden="true" />
-            등록
-          </Link>
-        </nav>
+          <HeaderSearch className="ml-2 hidden max-w-lg md:flex" />
+
+          <nav className="ml-auto flex items-center gap-1.5 text-sm font-bold">
+            <Link
+              className={buttonClassName({ variant: "ghost", size: "sm", className: "max-sm:hidden" })}
+              href="/feedback"
+            >
+              <MessageCircleMore className="size-4" aria-hidden="true" />
+              문의·피드백
+            </Link>
+            <Link
+              aria-label="없는 밈 제보"
+              className={buttonClassName({ size: "sm", className: "max-sm:size-9 max-sm:px-0" })}
+              href="/submit?type=request"
+            >
+              <Plus className="size-4" aria-hidden="true" />
+              <span className="hidden sm:inline">없는 밈 제보</span>
+            </Link>
+          </nav>
+        </div>
+        <HeaderSearch className="mt-2.5 md:hidden" />
       </div>
     </header>
   );

@@ -3,6 +3,7 @@ import path from "node:path";
 
 const nextConfig: NextConfig = {
   output: "export",
+  transpilePackages: ["@origin/ui"],
   basePath: "/viral",
   assetPrefix: "/viral",
   images: { unoptimized: true },

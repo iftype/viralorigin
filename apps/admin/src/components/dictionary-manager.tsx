@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { Field } from "@origin/ui";
 
 type Video = {
   id: string;
@@ -257,8 +258,4 @@ export function DictionaryManager({
       </div>
     </section>
   );
-}
-
-function Field({ label, wide = false, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
-  return <label className={`block text-xs font-black text-black/55 ${wide ? "sm:col-span-2" : ""}`}>{label}<span className="mt-2 block [&_input]:w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-black/10 [&_input]:bg-[#f7f7f8] [&_input]:px-4 [&_input]:py-3 [&_input]:font-medium [&_input]:outline-none [&_select]:w-full [&_select]:rounded-xl [&_select]:border [&_select]:border-black/10 [&_select]:bg-[#f7f7f8] [&_select]:px-4 [&_select]:py-3 [&_textarea]:min-h-24 [&_textarea]:w-full [&_textarea]:resize-y [&_textarea]:rounded-xl [&_textarea]:border [&_textarea]:border-black/10 [&_textarea]:bg-[#f7f7f8] [&_textarea]:px-4 [&_textarea]:py-3 [&_textarea]:font-medium [&_textarea]:leading-6 [&_textarea]:outline-none">{children}</span></label>;
 }

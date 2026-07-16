@@ -27,3 +27,13 @@ Do not put any of those values in `NEXT_PUBLIC_*`, committed `.env` files, workf
 Certbot is installed from the officially recommended snap package. Its systemd timer renews certificates automatically before expiry.
 
 The workflow uploads the static web output, compiled API, workspace lockfile, and release version. It installs only production API dependencies on the VM and restarts `origin-api`.
+
+## Static admin deployment
+
+The admin build uses the `/viral` base path and is served as static files on the existing `iftype.store` Nginx server. It does not add another Node process. The `/viral/api/` location proxies only admin API calls to the ViralOrigin API domain.
+
+Required secrets are `ADMIN_ORACLE_HOST`, `ADMIN_ORACLE_USER`, `ADMIN_ORACLE_SSH_KEY`, `ADMIN_ORACLE_SSH_PORT`, and `ADMIN_ORACLE_DEPLOY_PATH`. Enable the job with repository variable `ADMIN_DEPLOY_ENABLED=true`.
+
+## Media storage boundary
+
+The Oracle release directory stores code and JSON metadata only. Do not upload meme images or video files to the VM. The current web build uses unoptimized external image URLs so the browser fetches thumbnails from their HTTPS origin. The planned managed path is object storage plus CDN as defined in `PLAN.md`.

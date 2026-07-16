@@ -1,54 +1,122 @@
 # ViralOrigin
 
-밈, 챌린지, 바이럴 영상의 원본과 확산 과정을 함께 검증하고 기록하는 참여형 사전입니다.
+밈·챌린지·인터넷 유행어의 원본 근거와 확산 과정을 함께 검증하는 참여형 사전입니다. 사전 데이터는 Oracle API가 소유하므로 관리자가 항목을 공개한 뒤 클라이언트를 다시 배포하지 않아도 즉시 반영됩니다.
 
-## Monorepo
+## Service URLs
+
+| 용도 | 주소 | 배포 기준 |
+| --- | --- | --- |
+| 운영 클라이언트 | https://viralorigin.vercel.app | `main` |
+| 개발 클라이언트 | https://viralorigin-git-develop-iftypes-projects.vercel.app | `develop` |
+| 관리자 | https://iftype.store/viral/ | `main` 정적 배포 |
+| API | https://meme.iftype.store/api/v1 | `main` Oracle 배포 |
+
+## Architecture
 
 ```text
 apps/
-  web/       Next.js 정적 웹 클라이언트
-  api/       Fastify API 서버
+  web/        Next.js 정적 클라이언트: 홈, 검색, 상세, 제보, 정책
+  admin/      Next.js 정적 관리자: inbox, 사전 작성·검토·공개
+  api/        Fastify API: 공개 사전, 제보, 관리자 인증·CRUD
+packages/
+  ui/         웹·관리자 공용 디자인 토큰과 표현 컴포넌트
 infra/
-  nginx/     웹 정적 파일과 /api 리버스 프록시 예시
-  systemd/   API 프로세스 서비스 예시
-docs/        브랜치·배포 운영 문서
+  nginx/      정적 파일과 API reverse proxy 예시
+  systemd/    API user service 예시
+scripts/
+  seed-catalog.ts  기본 사전 마이그레이션 도구
+docs/
+  DESIGN_SYSTEM.md 디자인 원칙과 컴포넌트 사용법
+  BRANCHING.md     브랜치·버전 전략
+  DEPLOYMENT.md    Oracle 준비 절차
+PLAN.md            우선순위와 다음 구현 계약
 ```
+
+데이터 흐름:
+
+```text
+Browser ── /api ──▶ Vercel rewrite / Nginx ──▶ Fastify ──▶ shared JSON
+Admin   ── /viral/api ────────────────────────▶ Fastify
+```
+
+- 브라우저 코드에는 서버 IP, SSH 키, 관리자 비밀번호를 넣지 않습니다.
+- 운영 비밀은 Oracle의 `/opt/origin/shared/api.env`와 GitHub Actions Secret에만 둡니다.
+- 현재 사전과 관리자 inbox는 작은 JSON 파일을 원자적으로 교체해 저장합니다.
+- 데이터베이스·댓글·회원 전환 설계는 [PLAN.md](PLAN.md)를 따릅니다.
 
 ## Local development
 
+요구사항: Node.js 22, pnpm 11.1.0.
+
 ```bash
 pnpm install
-pnpm dev          # web + api
-pnpm dev:web      # http://localhost:3000
-pnpm dev:api      # http://127.0.0.1:4000
+pnpm dev           # web :3000 + api :4000
+pnpm dev:web       # client only
+pnpm dev:api       # API only
+pnpm dev:admin     # admin :3100
 ```
-
-검증 명령:
 
 ```bash
 pnpm lint
+pnpm typecheck
 pnpm build
 ```
 
-API 상태 확인:
+환경값은 [apps/api/.env.example](apps/api/.env.example)과 [apps/web/.env.example](apps/web/.env.example)을 참고하되 실제 값은 추적되지 않는 `.env` 또는 서버 환경 파일에 둡니다.
 
-```bash
-curl http://127.0.0.1:4000/health
+## Public API
+
+| Method | Path | 설명 |
+| --- | --- | --- |
+| `GET` | `/api/v1/health` | 서비스 상태·버전 |
+| `GET` | `/api/v1/memes?page=1&pageSize=24&kind=&tag=&query=` | 공개 사전 목록, 최대 48개 |
+| `GET` | `/api/v1/memes/:slug` | 공개된 사전 상세 |
+| `POST` | `/api/v1/intake` | 밈 요청·원본 제보·피드백·신고 접수 |
+
+관리자 API는 서명된 HttpOnly 쿠키가 필요합니다. 상세 계약은 [apps/api/src/CONTEXT.md](apps/api/src/CONTEXT.md)에 유지합니다.
+
+## Adding dictionary entries
+
+1. `https://iftype.store/viral/`에서 로그인합니다.
+2. `사전 관리` 탭에서 항목을 `작성 중`으로 저장합니다.
+3. 원본·근거·타임라인을 검토합니다.
+4. `공개`로 바꾸면 운영·개발 클라이언트가 API에서 즉시 읽습니다.
+
+항목 추가만으로 web을 커밋하거나 Vercel을 재배포하지 않습니다. 코드 변경이 아닌 콘텐츠 변경은 관리자 API가 정답입니다.
+
+## Design system
+
+공통 토큰과 작은 UI는 `@origin/ui`에서 가져옵니다.
+
+```tsx
+import { Badge, Button, Card, Field, buttonClassName } from "@origin/ui";
 ```
 
-실제 환경값은 각 앱의 `.env.example`을 참고해 추적되지 않는 `.env` 파일에 둡니다. 서버 주소, SSH 키, 배포 경로는 클라이언트 환경변수에 넣지 않습니다.
+- 도메인 판단과 API 호출은 `packages/ui`에 넣지 않습니다.
+- 페이지는 feature 컴포넌트를 조립하고, 긴 섹션 구현을 직접 소유하지 않습니다.
+- 새 색상·radius·shadow는 임의 hex보다 토큰 추가를 먼저 검토합니다.
+
+자세한 규칙은 [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)를 읽어주세요.
 
 ## Branches and deployment
 
-- 기능 개발과 초기 푸시는 `develop`에서 진행합니다.
-- `develop`에서 `main`으로 PR이 병합되면 시맨틱 버전과 GitHub Release가 생성됩니다.
-- Vercel은 `main`만 프로덕션으로 배포하며 `develop`과 기능 브랜치 빌드는 생략합니다.
-- GitHub Pages는 Oracle 전환 중에도 웹 프리뷰 배포를 유지합니다.
-- Oracle 배포는 필요한 GitHub Actions Secret을 등록하고 `ORACLE_DEPLOY_ENABLED=true`로 바꾼 뒤 활성화됩니다.
+- `develop`: 통합 개발, CI, 고정 Vercel Preview 자동배포
+- `main`: 보호된 릴리스, Vercel Production, Oracle API, 관리자 자동배포
+- 그 외 브랜치: Vercel 빌드 생략
+- `develop → main`: PR 체크 통과 후 merge, semantic-release 버전 생성
 
-자세한 내용:
+## Copyright and privacy
 
-- [브랜치·버전 전략](docs/BRANCHING.md)
-- [Oracle VM 배포 준비](docs/DEPLOYMENT.md)
+외부 게시물·영상·음원·이미지의 권리는 각 원저작자와 권리자에게 있습니다. ViralOrigin은 출처와 확산 맥락을 기록하며 권리 침해·삭제 요청은 사이트 문의 폼 또는 `iftype@naver.com`으로 받습니다.
 
-> Oracle 호스트는 프론트 코드나 Git 이력에 넣지 않습니다. 브라우저는 같은 도메인의 `/api`를 호출하고 Nginx가 내부 API로 전달합니다.
+개인정보처리방침은 `/privacy`에 공개되어 있습니다. 회원, 분석 도구, 광고, 외부 이미지 저장소를 도입하기 전에 실제 수집·보관 정책과 법률 검토를 갱신해야 합니다.
+
+## Documentation order for contributors and AI agents
+
+1. [AGENTS.md](AGENTS.md)
+2. 루트 [CONTEXT.md](CONTEXT.md)
+3. 수정 대상에서 가장 가까운 `CONTEXT.md`
+4. [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md)
+5. [PLAN.md](PLAN.md)
+
+코드와 문서가 다르면 실제 동작을 확인하고 같은 PR에서 문서를 함께 고칩니다.

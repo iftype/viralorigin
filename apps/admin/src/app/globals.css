@@ -1,11 +1,26 @@
 @import "tailwindcss";
+@import "@origin/ui/tokens.css";
+@source "../../../../packages/ui/src";
 
 :root {
-  --background: #f7f7f8;
-  --foreground: #171719;
-  --pink: #fe2c55;
-  --blue: #25f4ee;
+  --background: var(--vo-color-canvas);
+  --foreground: var(--vo-color-ink);
+  --pink: var(--vo-color-brand);
+  --blue: var(--vo-color-signal);
 }
+
+.vo-field-control :is(input, select, textarea) {
+  width: 100%;
+  border: 1px solid var(--vo-color-border);
+  border-radius: var(--vo-radius-sm);
+  background: var(--vo-color-canvas);
+  padding: 0.75rem 1rem;
+  color: var(--vo-color-ink);
+  outline: none;
+}
+
+.vo-field-control textarea { min-height: 7rem; resize: vertical; line-height: 1.5; }
+.vo-field-control :is(input, select, textarea):focus { border-color: var(--vo-color-ink); }
 
 * { box-sizing: border-box; }
 
