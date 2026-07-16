@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { BrandMark } from "@origin/ui";
 
 import {
   DictionaryManager,
@@ -110,7 +111,7 @@ function Login({ onAuthenticated }: { onAuthenticated: () => void }) {
     <main className="flex min-h-screen items-center justify-center p-5">
       <section className="w-full max-w-sm rounded-[2rem] border border-black/5 bg-white p-7 shadow-[0_24px_70px_rgba(0,0,0,0.09)] sm:p-9">
         <div className="flex items-center gap-3">
-          <span className="relative flex size-11 items-center justify-center rounded-2xl bg-black text-lg font-black text-white shadow-[-4px_0_0_#25f4ee,4px_0_0_#fe2c55]">V</span>
+          <BrandMark className="size-11 rounded-2xl text-lg" />
           <div>
             <p className="text-sm font-black tracking-[-0.04em]">VIRALORIGIN</p>
             <p className="text-xs font-bold text-black/35">ADMIN</p>
@@ -235,7 +236,7 @@ export default function AdminPage() {
     <main className="min-h-screen pb-16">
       <header className="sticky top-0 z-30 border-b border-black/5 bg-white/85 backdrop-blur-xl">
         <div className="admin-shell flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2.5 font-black"><span className="flex size-8 items-center justify-center rounded-xl bg-black text-sm text-white shadow-[-3px_0_0_#25f4ee,3px_0_0_#fe2c55]">V</span><span className="tracking-[-0.04em]">VIRALORIGIN</span><span className="hidden rounded-full bg-black/5 px-2 py-1 text-[0.62rem] text-black/45 sm:inline">ADMIN</span></div>
+          <div className="flex items-center gap-2.5 font-black"><BrandMark /><span className="tracking-[-0.04em]">VIRALORIGIN</span><span className="hidden rounded-full bg-black/5 px-2 py-1 text-[0.62rem] text-black/45 sm:inline">ADMIN</span></div>
           <button className="flex items-center gap-2 rounded-full px-3 py-2 text-xs font-black text-black/45 transition hover:bg-black/5 hover:text-black" onClick={() => void logout()} type="button"><LogOut className="size-4" />로그아웃</button>
         </div>
       </header>

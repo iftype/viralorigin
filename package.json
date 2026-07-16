@@ -7,6 +7,7 @@
     "dev": "pnpm --parallel --filter @origin/web --filter @origin/api dev",
     "dev:web": "pnpm --filter @origin/web dev",
     "dev:api": "pnpm --filter @origin/api dev",
+    "dev:admin": "pnpm --filter @origin/admin dev",
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm -r --if-present typecheck",

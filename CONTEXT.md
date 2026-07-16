@@ -10,6 +10,7 @@
 - `apps/web`: Next.js App Router, React, TypeScript, Tailwind CSS
 - `apps/admin`: `/viral` basePath의 정적 Next.js 관리자 화면
 - `apps/api`: Fastify, TypeScript, Node.js 22
+- `packages/ui`: web/admin 공용 디자인 토큰과 도메인 비의존 UI primitive
 - `infra`: Nginx reverse proxy와 systemd API 서비스 예시
 - 공개 사전과 운영자 큐는 Oracle API의 파일 저장소를 사용하고, 브라우저 로컬 참여 저장소는 토론 프로토타입에만 남긴다.
 
@@ -32,4 +33,4 @@
 
 ## Next milestone
 
-공용 데이터베이스를 선택해 현재 JSON 사전·운영자 큐와 브라우저의 투표·댓글을 함께 이전한다.
+`PLAN.md`의 P0 순서대로 SQLite migration, canonical category, 외부 object storage thumbnail 경계를 구현한다.

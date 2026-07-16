@@ -7,6 +7,7 @@ const basePath = isGitHubActions && repositoryName ? `/${repositoryName}` : "";
 
 const nextConfig: NextConfig = {
   output: "export",
+  transpilePackages: ["@origin/ui"],
   basePath,
   assetPrefix: basePath,
   env: {
