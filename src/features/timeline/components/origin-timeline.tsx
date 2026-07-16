@@ -1,3 +1,5 @@
+import { ExternalLink } from "lucide-react";
+
 import type { TimelineEvent } from "@/types/meme";
 
 const kindLabels = {
@@ -32,10 +34,20 @@ export function OriginTimeline({ events }: { events: TimelineEvent[] }) {
             <p className="mt-2 text-sm leading-6 text-black/50">
               {event.description}
             </p>
+            {event.sourceUrl && (
+              <a
+                className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-black/5 px-3 py-2 text-xs font-black text-black/55 hover:bg-black hover:text-white"
+                href={event.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {event.sourceLabel ?? "관련 링크"}
+                <ExternalLink className="size-3" aria-hidden="true" />
+              </a>
+            )}
           </div>
         </li>
       ))}
     </ol>
   );
 }
-

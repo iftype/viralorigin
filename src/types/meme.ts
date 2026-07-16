@@ -44,6 +44,8 @@ export type TimelineEvent = {
   dateLabel: string;
   title: string;
   description: string;
+  sourceUrl?: string;
+  sourceLabel?: string;
   video?: Video;
   kind: TimelineEventKind;
 };
@@ -56,8 +58,8 @@ export type Meme = {
   summary: string;
   origin: OriginClaim;
   timeline: TimelineEvent[];
-  topVideos: Video[];
+  trendingVideos: Video[];
+  relatedVideos: Video[];
   tags: string[];
   accent: string;
 };
-

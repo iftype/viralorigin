@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  ArrowUpRight,
   Check,
   CircleHelp,
   Clock3,
@@ -66,6 +67,9 @@ export default async function MemePage({ params }: MemePageProps) {
 
   const status = statusMeta[meme.origin.status];
   const StatusIcon = status.icon;
+  const otherMemes = sampleMemes
+    .filter((candidate) => candidate.id !== meme.id)
+    .slice(0, 3);
 
   return (
     <>
@@ -151,59 +155,46 @@ export default async function MemePage({ params }: MemePageProps) {
                 <ExternalLink className="size-4" aria-hidden="true" />
               </a>
             </dl>
-          </div>
-        </section>
 
-        <section className="border-y border-black/5 bg-white py-14 sm:py-20">
-          <div className="page-shell">
-            <div className="mx-auto max-w-3xl">
-              <p className="text-xs font-black text-[#8b5cf6]">WHY THIS ONE?</p>
-              <h2 className="mt-1 text-2xl font-black tracking-[-0.04em]">
-                왜 이 영상인가요?
+            <div className="mt-10 border-t border-black/5 pt-8">
+              <p className="text-xs font-black text-[#8b5cf6]">EVIDENCE</p>
+              <h2 className="mt-1 text-xl font-black tracking-[-0.03em]">
+                이 원본을 지지하는 근거
               </h2>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <ol className="mt-5 space-y-3">
                 {meme.origin.evidence.map((evidence, index) => (
-                  <article
-                    className="rounded-2xl border border-black/5 bg-[#f7f7f8] p-5"
+                  <li
+                    className="flex gap-4 rounded-2xl border border-black/5 bg-[#f7f7f8] p-5"
                     key={evidence.title}
                   >
-                    <span className="text-xs font-black text-black/25">
-                      {String(index + 1).padStart(2, "0")}
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white text-[0.65rem] font-black text-black/35 shadow-sm">
+                      {index + 1}
                     </span>
-                    <h3 className="mt-3 font-black">{evidence.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-black/50">
-                      {evidence.detail}
-                    </p>
-                    {evidence.url && (
-                      <a
-                        className="mt-4 inline-flex items-center gap-1.5 text-xs font-black text-[#fe2c55]"
-                        href={evidence.url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        근거 보기
-                        <ExternalLink className="size-3" aria-hidden="true" />
-                      </a>
-                    )}
-                  </article>
+                    <div>
+                      <h3 className="font-black">{evidence.title}</h3>
+                      <p className="mt-1.5 text-sm leading-6 text-black/50">
+                        {evidence.detail}
+                      </p>
+                      {evidence.url && (
+                        <a
+                          className="mt-3 inline-flex items-center gap-1.5 text-xs font-black text-[#fe2c55]"
+                          href={evidence.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          근거 링크
+                          <ExternalLink className="size-3" aria-hidden="true" />
+                        </a>
+                      )}
+                    </div>
+                  </li>
                 ))}
-              </div>
-            </div>
-          </div>
-        </section>
+              </ol>
 
-        <section className="page-shell py-14 sm:py-20">
-          <div className="mx-auto max-w-3xl">
-            <p className="text-xs font-black text-[#25a9a4]">TIMELINE</p>
-            <h2 className="mt-1 text-2xl font-black tracking-[-0.04em]">
-              시작부터 유행까지
-            </h2>
-            <p className="mt-2 text-sm text-black/45">
-              아래로 내려가며 퍼진 흐름을 확인해 보세요.
-            </p>
-            <div className="mt-8">
-              <OriginTimeline events={meme.timeline} />
+              <div className="mt-5">
+                <SubmissionCta memeTitle={meme.title} />
+              </div>
             </div>
           </div>
         </section>
@@ -213,25 +204,108 @@ export default async function MemePage({ params }: MemePageProps) {
             <div className="mx-auto max-w-3xl">
               <p className="text-xs font-black text-[#fe2c55]">TRENDING CLIPS</p>
               <h2 className="mt-1 text-2xl font-black tracking-[-0.04em]">
-                플랫폼별 트렌딩 영상
+                유행을 크게 만든 영상
               </h2>
               <p className="mt-2 text-sm text-black/45">
-                확인 가능한 대표 게시물을 플랫폼별로 모았어요. 수치는 마지막
+                원본을 더 넓은 사람들에게 퍼뜨린 대표 게시물이에요. 수치는 마지막
                 검토 시점 기준입니다.
               </p>
               <div className="mt-6">
-                <VideoTabs videos={meme.topVideos} />
+                <VideoTabs videos={meme.trendingVideos} />
               </div>
             </div>
           </div>
         </section>
-      </article>
 
-      <div className="page-shell pt-14 sm:pt-20">
-        <div className="mx-auto max-w-3xl">
-          <SubmissionCta memeTitle={meme.title} />
-        </div>
-      </div>
+        <section className="page-shell py-14 sm:py-20">
+          <div className="mx-auto max-w-3xl">
+            <p className="text-xs font-black text-[#8b5cf6]">RELATED</p>
+            <h2 className="mt-1 text-2xl font-black tracking-[-0.04em]">
+              관련 영상
+            </h2>
+            <p className="mt-2 text-sm text-black/45">
+              같은 포맷의 변형, 후속 참여, 맥락을 이해하는 데 도움이 되는
+              영상이에요.
+            </p>
+            <div className="mt-6">
+              <VideoTabs videos={meme.relatedVideos} />
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-black/5 bg-white py-14 sm:py-20">
+          <div className="page-shell">
+            <div className="mx-auto max-w-3xl">
+              <p className="text-xs font-black text-[#25a9a4]">TIMELINE</p>
+              <h2 className="mt-1 text-2xl font-black tracking-[-0.04em]">
+                시작부터 유행까지
+              </h2>
+              <p className="mt-2 text-sm text-black/45">
+                각 단계의 링크를 열어 근거와 확산 흐름을 함께 확인해 보세요.
+              </p>
+              <div className="mt-8">
+                <OriginTimeline events={meme.timeline} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="page-shell py-14 sm:py-20">
+          <div className="mx-auto max-w-3xl">
+            <p className="text-xs font-black text-black/35">MEME DICTIONARY</p>
+            <h2 className="mt-1 text-2xl font-black tracking-[-0.04em]">
+              다른 밈·챌린지 알아보기
+            </h2>
+            <p className="mt-2 text-sm text-black/45">
+              챌린지부터 오래된 인터넷 밈까지, 다음 항목을 넘겨보세요.
+            </p>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              {otherMemes.map((otherMeme) => {
+                const isChallenge = otherMeme.tags.some((tag) =>
+                  ["댄스", "챌린지", "역챌린지"].includes(tag),
+                );
+
+                return (
+                  <Link
+                    className="group flex min-h-48 flex-col rounded-2xl border border-black/5 bg-white p-5 shadow-[0_6px_20px_rgba(0,0,0,0.04)] transition-transform hover:-translate-y-1"
+                    href={`/memes/${otherMeme.slug}`}
+                    key={otherMeme.id}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="inline-flex items-center gap-2 text-xs font-black text-black/40">
+                        <span
+                          className="size-2 rounded-full"
+                          style={{ backgroundColor: otherMeme.accent }}
+                        />
+                        {isChallenge ? "챌린지" : "밈"}
+                      </span>
+                      <ArrowUpRight
+                        className="size-4 text-black/25 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <h3 className="mt-auto text-2xl font-black tracking-[-0.04em]">
+                      {otherMeme.title}
+                    </h3>
+                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-black/45">
+                      {otherMeme.summary}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <Link
+              className="mt-5 inline-flex items-center gap-2 rounded-full bg-black px-5 py-3 text-sm font-black text-white"
+              href="/"
+            >
+              사전 전체 보기
+              <ArrowUpRight className="size-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </section>
+      </article>
     </>
   );
 }

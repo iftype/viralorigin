@@ -1,4 +1,4 @@
-import { ArrowUpRight, Plus } from "lucide-react";
+import { ArrowUpRight, MessageCircleWarning } from "lucide-react";
 
 export function SubmissionCta({ memeTitle }: { memeTitle: string }) {
   const issueTitle = encodeURIComponent(`[제보] ${memeTitle} 출처 수정`);
@@ -8,27 +8,29 @@ export function SubmissionCta({ memeTitle }: { memeTitle: string }) {
   const issueUrl = `https://github.com/iftype/meme-origin-timeline/issues/new?title=${issueTitle}&body=${issueBody}`;
 
   return (
-    <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#fe2c55] via-[#ff4d7d] to-[#8b5cf6] p-7 text-white sm:p-10">
-      <div className="max-w-xl">
-        <span className="flex size-10 items-center justify-center rounded-full bg-white/20">
-          <Plus className="size-5" aria-hidden="true" />
+    <section className="flex flex-col gap-5 rounded-2xl border border-[#fe2c55]/15 bg-[#fff4f6] p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#fe2c55] text-white">
+          <MessageCircleWarning className="size-4" aria-hidden="true" />
         </span>
-        <h2 className="mt-5 text-2xl font-black tracking-[-0.04em] sm:text-3xl">
-          더 오래된 원본을 알고 있나요?
-        </h2>
-        <p className="mt-3 text-sm leading-6 text-white/75">
-          링크만 남겨도 좋아요. 확인한 뒤 기록에 반영할게요.
-        </p>
+        <div>
+          <h2 className="font-black tracking-[-0.02em]">
+            이 원본이 아닌 것 같나요?
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-black/50">
+            더 오래된 게시물이나 반대 근거를 링크와 함께 알려주세요.
+          </p>
+        </div>
+      </div>
         <a
-          className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-black transition-transform hover:scale-[1.02]"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-black px-5 py-3 text-sm font-black text-white transition-transform hover:scale-[1.02]"
           href={issueUrl}
           target="_blank"
           rel="noreferrer"
         >
-          원본 제보하기
+          원본에 이의제기
           <ArrowUpRight className="size-4" aria-hidden="true" />
         </a>
-      </div>
     </section>
   );
 }

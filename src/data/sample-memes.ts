@@ -51,6 +51,8 @@ export const sampleMemes: Meme[] = [
         title: "Otsukare SUMMER 재발견",
         description:
           "2003년 발표된 HALCALI의 곡이 영국과 미국 숏폼을 중심으로 다시 쓰이기 시작합니다.",
+        sourceUrl: "https://v.daum.net/v/20260624144803751",
+        sourceLabel: "확산 배경 기사",
         kind: "spread",
       },
       {
@@ -59,6 +61,8 @@ export const sampleMemes: Meme[] = [
         title: "팬 편집 릴스 공개",
         description:
           "료의 Ode to Love 안무와 Otsukare SUMMER를 결합한 ‘꿍싯꿍싯 파트’가 Instagram에 올라옵니다.",
+        sourceUrl: "https://www.instagram.com/reel/DXynhceJVBC/",
+        sourceLabel: "원본 릴스",
         kind: "origin",
       },
       {
@@ -67,6 +71,9 @@ export const sampleMemes: Meme[] = [
         title: "NCT 공식 계정이 탑승",
         description:
           "NCT 공식 TikTok이 료 버전을 직접 게시하면서 팬 편집이 공식 챌린지처럼 확장됩니다.",
+        sourceUrl:
+          "https://www.tiktok.com/@official_nct/video/7637412498311777543",
+        sourceLabel: "공식 TikTok",
         kind: "mainstream",
       },
       {
@@ -75,19 +82,13 @@ export const sampleMemes: Meme[] = [
         title: "아이돌 전반으로 확산",
         description:
           "NCT WISH 멤버들의 변형 영상에 이어 카리나, 레이, 사쿠라 등 여러 아이돌이 참여하며 플랫폼 밖까지 알려집니다.",
+        sourceUrl:
+          "https://www.tiktok.com/@official_nct/video/7645885334546304264",
+        sourceLabel: "멤버 변형 영상",
         kind: "spread",
       },
     ],
-    topVideos: [
-      {
-        id: "kkungsit-instagram-origin",
-        platform: "instagram",
-        url: "https://www.instagram.com/reel/DXynhceJVBC/",
-        title: "꿍싯꿍싯 파트 — 팬 편집 원본",
-        creator: "ryo.cuteeeeee",
-        uploadedAt: "2026-05-01",
-        viewCountLabel: "좋아요 8.7만",
-      },
+    trendingVideos: [
       {
         id: "kkungsit-tiktok-ryo",
         platform: "tiktok",
@@ -97,6 +98,8 @@ export const sampleMemes: Meme[] = [
         uploadedAt: "2026-05-08",
         viewCountLabel: "350만 조회",
       },
+    ],
+    relatedVideos: [
       {
         id: "kkungsit-tiktok-cheeseball",
         platform: "tiktok",
@@ -150,6 +153,8 @@ export const sampleMemes: Meme[] = [
         title: "초기 개그 영상 공개",
         description: "음악과 짧은 춤 동작을 결합한 영상이 공개됩니다.",
         kind: "origin",
+        sourceUrl: "https://www.youtube.com/watch?v=8vJiSSAMNWw",
+        sourceLabel: "초기 영상",
       },
       {
         id: "harlem-2",
@@ -158,6 +163,8 @@ export const sampleMemes: Meme[] = [
         description:
           "평범한 장면에서 비트 드롭과 함께 모두가 춤추는 30초 안팎의 구조가 복제됩니다.",
         kind: "variation",
+        sourceUrl: "https://www.youtube.com/watch?v=ygr5AHufBN4",
+        sourceLabel: "대표 확산 영상",
       },
       {
         id: "harlem-3",
@@ -165,22 +172,26 @@ export const sampleMemes: Meme[] = [
         title: "글로벌 챌린지로 확산",
         description: "학교, 회사, 스포츠팀이 각자의 버전을 제작합니다.",
         kind: "mainstream",
+        sourceUrl: "https://www.youtube.com/watch?v=ygr5AHufBN4",
+        sourceLabel: "대표 확산 영상",
       },
     ],
-    topVideos: [
-      {
-        id: "harlem-top-1",
-        platform: "youtube",
-        url: "https://www.youtube.com/watch?v=8vJiSSAMNWw",
-        title: "DO THE HARLEM SHAKE (ORIGINAL)",
-        creator: "DizastaMusic",
-      },
+    trendingVideos: [
       {
         id: "harlem-top-2",
         platform: "youtube",
         url: "https://www.youtube.com/watch?v=ygr5AHufBN4",
         title: "Harlem Shake — 대표 확산 버전",
         creator: "샘플 큐레이션",
+      },
+    ],
+    relatedVideos: [
+      {
+        id: "harlem-top-1",
+        platform: "youtube",
+        url: "https://www.youtube.com/watch?v=8vJiSSAMNWw",
+        title: "DO THE HARLEM SHAKE (ORIGINAL)",
+        creator: "DizastaMusic",
       },
     ],
     tags: ["댄스", "챌린지", "2010s", "유튜브"],
@@ -226,6 +237,8 @@ export const sampleMemes: Meme[] = [
         title: "픽셀 아트 공개",
         description: "Pop Tart Cat GIF가 먼저 공개됩니다.",
         kind: "origin",
+        sourceUrl: "https://www.nyan.cat/",
+        sourceLabel: "Nyan Cat 아카이브",
       },
       {
         id: "nyan-2",
@@ -233,6 +246,8 @@ export const sampleMemes: Meme[] = [
         title: "음악 합성 영상 업로드",
         description: "반복 애니메이션과 Nyanyanyanyanyanyanya!가 결합됩니다.",
         kind: "remix",
+        sourceUrl: "https://www.youtube.com/watch?v=QH2-TGUlwu4",
+        sourceLabel: "대표 원본 영상",
       },
       {
         id: "nyan-3",
@@ -240,9 +255,11 @@ export const sampleMemes: Meme[] = [
         title: "리믹스와 게임으로 확산",
         description: "장시간 버전, 캐릭터 변형, 팬 게임이 이어집니다.",
         kind: "spread",
+        sourceUrl: "https://www.nyan.cat/",
+        sourceLabel: "인터랙티브 아카이브",
       },
     ],
-    topVideos: [
+    trendingVideos: [
       {
         id: "nyan-top-1",
         platform: "youtube",
@@ -250,6 +267,8 @@ export const sampleMemes: Meme[] = [
         title: "Nyan Cat [original]",
         creator: "saraj00n",
       },
+    ],
+    relatedVideos: [
       {
         id: "nyan-top-2",
         platform: "unknown",
@@ -301,6 +320,8 @@ export const sampleMemes: Meme[] = [
         title: "곡과 뮤직비디오 발표",
         description: "Rick Astley의 Never Gonna Give You Up이 공개됩니다.",
         kind: "origin",
+        sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        sourceLabel: "공식 뮤직비디오",
       },
       {
         id: "rick-2",
@@ -308,6 +329,8 @@ export const sampleMemes: Meme[] = [
         title: "링크 장난으로 확산",
         description: "예상치 못한 뮤직비디오로 연결하는 bait-and-switch가 퍼집니다.",
         kind: "variation",
+        sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        sourceLabel: "릭롤 대상 영상",
       },
       {
         id: "rick-3",
@@ -315,9 +338,11 @@ export const sampleMemes: Meme[] = [
         title: "주류 문화에 정착",
         description: "방송, 행사, 브랜드 캠페인에서 반복적으로 재현됩니다.",
         kind: "mainstream",
+        sourceUrl: "https://x.com/rickastley",
+        sourceLabel: "관련 계정",
       },
     ],
-    topVideos: [
+    trendingVideos: [
       {
         id: "rick-top-1",
         platform: "youtube",
@@ -325,6 +350,8 @@ export const sampleMemes: Meme[] = [
         title: "Never Gonna Give You Up (Official Video)",
         creator: "Rick Astley",
       },
+    ],
+    relatedVideos: [
       {
         id: "rick-top-2",
         platform: "x",
