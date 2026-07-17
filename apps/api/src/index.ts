@@ -65,7 +65,7 @@ registerTrendRoutes(app, {
   memeStore,
   trendStore,
 });
-registerQuizRoutes(app, quizStore);
+registerQuizRoutes(app, quizStore, memeStore);
 registerAdminRoutes(app, { adminAuth, adminOrigin, categoryStore, inboxStore, memeStore });
 
 const stop = async (signal: string) => {

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { QuizStore } from "../quiz-store.js";
+import type { MemeStore } from "../meme-store.js";
 import type { QuizCard, QuizLog } from "../quiz-types.js";
 import { randomUUID } from "node:crypto";
 
@@ -90,10 +91,42 @@ const defaultQuizCards: QuizCard[] = [
   }
 ];
 
-export function registerQuizRoutes(app: FastifyInstance, quizStore: QuizStore) {
+export function registerQuizRoutes(
+  app: FastifyInstance,
+  quizStore: QuizStore,
+  memeStore: MemeStore,
+) {
   app.get("/api/v1/quiz/cards", async (request, reply) => {
     reply.header("Cache-Control", "no-store");
-    return { cards: defaultQuizCards };
+    try {
+      const memes = await memeStore.list();
+      
+      if (!memes || memes.length === 0) {
+        return { cards: defaultQuizCards };
+      }
+
+      const mappedCards: QuizCard[] = memes.map((meme) => ({
+        id: meme.id,
+        title: meme.title,
+        summary: meme.summary,
+        type: meme.kind === "challenge" ? "origin" : "minor",
+        thumbnailUrl: meme.thumbnailUrl,
+        accentColor: meme.accent,
+        originDetail: {
+          creator: meme.origin.video?.creator || "미상",
+          originYear: meme.lifecycle?.originYear,
+          platform: meme.origin.video?.platform || "unknown",
+          description: meme.origin.summary || meme.summary,
+        },
+      }));
+
+      // 무작위로 섞어서 최대 12개 반환
+      const shuffled = mappedCards.sort(() => Math.random() - 0.5);
+      return { cards: shuffled.slice(0, 12) };
+    } catch (error) {
+      app.log.error(error, "Failed to load memes from database, using fallbacks");
+      return { cards: defaultQuizCards };
+    }
   });
 
   app.post("/api/v1/quiz/log", async (request, reply) => {
