@@ -6,11 +6,13 @@ import { Card } from "@origin/ui";
 
 interface QuizCardData {
   id: string;
+  slug: string;
   title: string;
   summary: string;
   type: "minor" | "origin";
   thumbnailUrl?: string;
   accentColor?: string;
+  field?: string;
   originDetail: {
     creator?: string;
     originYear?: number;
@@ -30,31 +32,26 @@ export function QuizCard({ card, active, onSwipe, onViewDetail }: QuizCardProps)
   const [dragState, setDragState] = useState({
     isDragging: false,
     startX: 0,
-    startY: 0,
     offsetX: 0,
-    offsetY: 0,
   });
   const [fledDirection, setFledDirection] = useState<"left" | "right" | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
   if (!active && !fledDirection) return null;
 
-  const handleStart = (clientX: number, clientY: number) => {
+  const handleStart = (clientX: number) => {
     if (!active || fledDirection) return;
     setDragState({
       isDragging: true,
       startX: clientX,
-      startY: clientY,
       offsetX: 0,
-      offsetY: 0,
     });
   };
 
-  const handleMove = (clientX: number, clientY: number) => {
+  const handleMove = (clientX: number) => {
     if (!dragState.isDragging) return;
     const offsetX = clientX - dragState.startX;
-    const offsetY = clientY - dragState.startY;
-    setDragState((prev) => ({ ...prev, offsetX, offsetY }));
+    setDragState((prev) => ({ ...prev, offsetX }));
   };
 
   const handleEnd = () => {
@@ -72,9 +69,7 @@ export function QuizCard({ card, active, onSwipe, onViewDetail }: QuizCardProps)
       setDragState({
         isDragging: false,
         startX: 0,
-        startY: 0,
         offsetX: 0,
-        offsetY: 0,
       });
     }
   };
@@ -91,11 +86,11 @@ export function QuizCard({ card, active, onSwipe, onViewDetail }: QuizCardProps)
   const onMouseDown = (e: ReactMouseEvent) => {
     // 버튼이나 아이콘 클릭 시 드래그 방지
     if ((e.target as HTMLElement).closest("button")) return;
-    handleStart(e.clientX, e.clientY);
+    handleStart(e.clientX);
   };
 
   const onMouseMove = (e: ReactMouseEvent) => {
-    handleMove(e.clientX, e.clientY);
+    handleMove(e.clientX);
   };
 
   const onMouseUp = () => {
@@ -106,12 +101,12 @@ export function QuizCard({ card, active, onSwipe, onViewDetail }: QuizCardProps)
   const onTouchStart = (e: ReactTouchEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
     const touch = e.touches[0];
-    handleStart(touch.clientX, touch.clientY);
+    handleStart(touch.clientX);
   };
 
   const onTouchMove = (e: ReactTouchEvent) => {
     const touch = e.touches[0];
-    handleMove(touch.clientX, touch.clientY);
+    handleMove(touch.clientX);
   };
 
   const onTouchEnd = () => {
@@ -119,18 +114,18 @@ export function QuizCard({ card, active, onSwipe, onViewDetail }: QuizCardProps)
   };
 
   // 계산 값들
-  const { offsetX, offsetY, isDragging } = dragState;
+  const { offsetX, isDragging } = dragState;
   const rotation = offsetX * 0.08; // 기울기 계산
   const scale = isDragging ? 1.02 : 1;
 
   // 날아간 상태 스타일 계산
   let transformStyle = "";
   if (fledDirection === "right") {
-    transformStyle = `translate3d(1000px, ${offsetY}px, 0) rotate(45deg)`;
+    transformStyle = "translate3d(1000px, 0, 0) rotate(45deg)";
   } else if (fledDirection === "left") {
-    transformStyle = `translate3d(-1000px, ${offsetY}px, 0) rotate(-45deg)`;
+    transformStyle = "translate3d(-1000px, 0, 0) rotate(-45deg)";
   } else {
-    transformStyle = `translate3d(${offsetX}px, ${offsetY}px, 0) rotate(${rotation}deg) scale(${scale})`;
+    transformStyle = `translate3d(${offsetX}px, 0, 0) rotate(${rotation}deg) scale(${scale})`;
   }
 
   // 스티커 투명도 (임계치로 나아가는 비율)
@@ -176,6 +171,7 @@ export function QuizCard({ card, active, onSwipe, onViewDetail }: QuizCardProps)
             }`}>
               {card.type === "minor" ? "마이너 밈" : "원조 챌린지"}
             </span>
+            {card.field && <span className="rounded-full bg-white/90 px-2.5 py-0.5 text-xs font-semibold text-black shadow-sm">{card.field}</span>}
           </div>
 
           {/* 스와이프 상태 오버레이 스티커 */}

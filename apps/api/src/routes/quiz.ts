@@ -21,9 +21,11 @@ export function registerQuizRoutes(
 ) {
   app.get("/api/v1/quiz/cards", async (_request, reply) => {
     reply.header("Cache-Control", "no-store");
-    const memes = await memeStore.list();
-    const cards: QuizCard[] = memes.map((meme) => ({
+    const [memes, configuredCards] = await Promise.all([memeStore.list(), quizStore.getCards()]);
+    const memeById = new Map(memes.map((meme) => [meme.id, meme]));
+    const toCard = (meme: (typeof memes)[number], field?: string): QuizCard => ({
       id: meme.id,
+      slug: meme.slug,
       title: meme.title,
       summary: meme.summary || "아직 설명이 등록되지 않은 밈입니다.",
       type:
@@ -33,6 +35,7 @@ export function registerQuizRoutes(
           : "origin",
       thumbnailUrl: meme.thumbnailUrl,
       accentColor: meme.accent,
+      field,
       originDetail: {
         creator: meme.origin.video?.creator || "미상",
         originYear: meme.lifecycle?.originYear,
@@ -42,12 +45,22 @@ export function registerQuizRoutes(
           meme.summary ||
           "이 밈의 출처와 사용 맥락을 함께 수집하고 있습니다.",
       },
-    }));
+    });
+    const managedCards = configuredCards
+      .filter((card) => card.enabled)
+      .flatMap((card) => {
+        const meme = memeById.get(card.memeId);
+        return meme ? [toCard(meme, card.field)] : [];
+      })
+      .slice(0, 5);
+    const cards = managedCards.length ? managedCards : memes.map((meme) => toCard(meme));
 
     // 같은 순서로 생기는 응답 편향을 줄이기 위해 Fisher-Yates로 섞는다.
-    for (let index = cards.length - 1; index > 0; index -= 1) {
-      const target = Math.floor(Math.random() * (index + 1));
-      [cards[index], cards[target]] = [cards[target], cards[index]];
+    if (!managedCards.length) {
+      for (let index = cards.length - 1; index > 0; index -= 1) {
+        const target = Math.floor(Math.random() * (index + 1));
+        [cards[index], cards[target]] = [cards[target], cards[index]];
+      }
     }
     return { cards: cards.slice(0, 5) };
   });

@@ -80,6 +80,7 @@ export type Meme = {
   timeline: TimelineEvent[];
   trendingVideos: Video[];
   relatedVideos: Video[];
+  relatedMemeIds?: string[];
   sourceLinks?: SourceLink[];
   lifecycle?: {
     originYear?: number;

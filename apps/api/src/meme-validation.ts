@@ -216,6 +216,7 @@ export function parseMemeInput(value: unknown): ParseResult {
       timeline,
       trendingVideos: parseVideos(raw.trendingVideos, "trending"),
       relatedVideos: parseVideos(raw.relatedVideos, "related"),
+      relatedMemeIds: stringList(raw.relatedMemeIds, 20).filter((id) => id !== (text(raw.id, 120) || slug)),
       sourceLinks,
       lifecycle: {
         originYear,

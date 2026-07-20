@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { randomUUID } from "node:crypto";
 
 import type { AdminAuth } from "../admin-auth.js";
 import type { AdminInboxStore } from "../admin-store.js";
@@ -290,6 +291,58 @@ export function registerAdminRoutes(
     async (request, reply) => {
       reply.header("Cache-Control", "no-store");
       return { items: await quizStore.getLogs() };
+    },
+  );
+
+  app.delete(
+    "/api/v1/admin/quiz/logs",
+    { preHandler: requireAdmin },
+    async (request, reply) => {
+      if (!hasTrustedOrigin(request.headers.origin)) return reply.code(403).send({ error: "허용되지 않은 요청입니다." });
+      return { deleted: await quizStore.clearLogs() };
+    },
+  );
+
+  app.delete(
+    "/api/v1/admin/quiz/logs/:sessionId",
+    { preHandler: requireAdmin },
+    async (request, reply) => {
+      if (!hasTrustedOrigin(request.headers.origin)) return reply.code(403).send({ error: "허용되지 않은 요청입니다." });
+      const { sessionId } = request.params as { sessionId: string };
+      if (!sessionId || sessionId.length > 120) return reply.code(400).send({ error: "참여자 ID를 확인해 주세요." });
+      const deleted = await quizStore.deleteSession(sessionId);
+      if (!deleted) return reply.code(404).send({ error: "삭제할 기록이 없습니다." });
+      return { deleted };
+    },
+  );
+
+  app.get(
+    "/api/v1/admin/quiz/cards",
+    { preHandler: requireAdmin },
+    async () => ({ items: await quizStore.getCards() }),
+  );
+
+  app.put(
+    "/api/v1/admin/quiz/cards",
+    { preHandler: requireAdmin },
+    async (request, reply) => {
+      if (!hasTrustedOrigin(request.headers.origin)) return reply.code(403).send({ error: "허용되지 않은 요청입니다." });
+      const rawCards = (request.body as { items?: unknown } | null)?.items;
+      if (!Array.isArray(rawCards) || rawCards.length > 5) return reply.code(400).send({ error: "퀴즈 카드는 최대 5개까지 설정할 수 있습니다." });
+      const memeIds = new Set((await memeStore.list()).map((meme) => meme.id));
+      const selected = new Set<string>();
+      const now = new Date().toISOString();
+      const cards = rawCards.flatMap((raw, index) => {
+        if (!raw || typeof raw !== "object") return [];
+        const entry = raw as Record<string, unknown>;
+        const memeId = typeof entry.memeId === "string" ? entry.memeId.trim() : "";
+        const field = typeof entry.field === "string" ? entry.field.trim().slice(0, 40) : "";
+        if (!memeIds.has(memeId) || selected.has(memeId) || !field) return [];
+        selected.add(memeId);
+        return [{ id: typeof entry.id === "string" && entry.id ? entry.id.slice(0, 120) : randomUUID(), memeId, field, enabled: entry.enabled !== false, sortOrder: index, updatedAt: now }];
+      });
+      if (cards.length !== rawCards.length) return reply.code(400).send({ error: "중복되지 않은 공개 밈과 분야를 선택해 주세요." });
+      return { items: await quizStore.replaceCards(cards) };
     },
   );
 }

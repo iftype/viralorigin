@@ -58,6 +58,7 @@ export type AdminMeme = {
   }>;
   trendingVideos: Video[];
   relatedVideos: Video[];
+  relatedMemeIds?: string[];
   sourceLinks?: SourceLink[];
   lifecycle?: { originYear?: number; firstSeenAt?: string; lastObservedAt?: string };
   categoryIds: string[];
@@ -224,6 +225,7 @@ export function DictionaryManager({
       timeline: [...firstTimeline, ...(base?.timeline.slice(1) ?? [])],
       trendingVideos: base?.trendingVideos ?? [],
       relatedVideos: base?.relatedVideos ?? [],
+      relatedMemeIds: form.getAll("relatedMemeIds").map(String).filter((id) => id !== (base?.id ?? slug)),
       sourceLinks: sourceLines(form.get("sourceLinks"), slug),
       lifecycle: {
         originYear: Number(form.get("originYear")) || undefined,
@@ -408,6 +410,7 @@ export function DictionaryManager({
             <Field label="별칭 · 쉼표 구분"><input name="aliases" defaultValue={editing?.aliases.join(", ")} /></Field>
             <Field label="태그 · 작은 검색 키워드"><input name="tags" placeholder="유행어, 디시, 2026" defaultValue={editing?.tags.join(", ")} /></Field>
             <Field label="카테고리" wide><div className="grid gap-2 rounded-2xl bg-[#f7f7f8] p-3 sm:grid-cols-2">{categories.filter((category) => category.isActive || editing?.categoryIds.includes(category.id)).map((category) => <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-sm font-bold" key={category.id}><input className="size-4 accent-black" defaultChecked={editing ? editing.categoryIds.includes(category.id) : category.slug === "korea-minor-meme"} name="categoryIds" type="checkbox" value={category.id} />{category.label}</label>)}</div></Field>
+            <Field label="연결·파생 밈" wide><div className="grid max-h-52 gap-2 overflow-y-auto rounded-2xl bg-[#f7f7f8] p-3 sm:grid-cols-2">{items.filter((item) => item.id !== editing?.id).map((item) => <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-sm font-bold" key={item.id}><input className="size-4 accent-black" defaultChecked={editing?.relatedMemeIds?.includes(item.id)} name="relatedMemeIds" type="checkbox" value={item.id} /><span className="min-w-0 truncate">{item.title}</span></label>)}{items.filter((item) => item.id !== editing?.id).length === 0 && <p className="text-xs font-bold text-black/35">연결할 다른 밈이 없습니다.</p>}</div></Field>
             <Field label="한 줄 설명 · 선택" wide><textarea name="summary" placeholder="비워도 저장할 수 있으며 나중에 제안이나 AI 초안으로 보완할 수 있습니다." defaultValue={editing?.summary} /></Field>
             <Field label="관련 커뮤니티 링크 · 한 줄에 하나" wide><textarea name="sourceLinks" placeholder={'링크 제목 | https://example.com/post\nhttps://example.com/another'} defaultValue={(editing?.sourceLinks ?? []).map((link) => `${link.title} | ${link.url}`).join("\n")} /></Field>
             <Field label="썸네일 URL · 선택" wide><input name="thumbnailUrl" type="url" placeholder="비우면 YouTube 또는 링크 메타데이터 후보를 사용합니다" defaultValue={editing?.thumbnailUrl} /></Field>

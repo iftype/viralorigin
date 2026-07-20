@@ -3,6 +3,7 @@ import { CommentSection } from "@/features/contributions/components/comment-sect
 import type { Meme } from "@/types/meme";
 
 import { MemeDetailHeader } from "./meme-detail-header";
+import { MemePulseCard } from "./meme-pulse-card";
 import { OriginSection } from "./origin-section";
 import { RelatedMemesSection } from "./related-memes-section";
 import { TimelineSection } from "./timeline-section";
@@ -12,6 +13,7 @@ export function MemeDetail({ meme, otherMemes }: { meme: Meme; otherMemes: Meme[
   return (
     <article>
       <MemeDetailHeader meme={meme} />
+      <MemePulseCard slug={meme.slug} />
       <OriginSection meme={meme} />
       <VideoCollectionSection meme={meme} type="trending" />
       <VideoCollectionSection meme={meme} type="related" />

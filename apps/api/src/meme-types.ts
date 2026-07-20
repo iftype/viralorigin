@@ -62,6 +62,7 @@ export type Meme = {
   }>;
   trendingVideos: Video[];
   relatedVideos: Video[];
+  relatedMemeIds?: string[];
   sourceLinks?: SourceLink[];
   lifecycle?: MemeLifecycle;
   categoryIds: string[];

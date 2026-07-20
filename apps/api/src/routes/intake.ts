@@ -16,6 +16,8 @@ export function registerIntakeRoutes(
       typeof body?.description === "string" ? body.description.trim() : "";
     const sourceUrl =
       typeof body?.sourceUrl === "string" ? body.sourceUrl.trim() : "";
+    const originUrl =
+      typeof body?.originUrl === "string" ? body.originUrl.trim() : "";
     const subjectId =
       typeof body?.subjectId === "string" ? body.subjectId.trim() : "";
 
@@ -35,6 +37,9 @@ export function registerIntakeRoutes(
     if ((isMemeRequest && !sourceUrl) || (sourceUrl && !/^https?:\/\//i.test(sourceUrl))) {
       return reply.code(400).send({ error: "링크 형식을 확인해 주세요." });
     }
+    if (originUrl && !/^https?:\/\//i.test(originUrl)) {
+      return reply.code(400).send({ error: "원본 링크 형식을 확인해 주세요." });
+    }
 
     const item = await inboxStore.create({
       category: category as (typeof inboxCategories)[number],
@@ -42,6 +47,7 @@ export function registerIntakeRoutes(
       author: author.slice(0, 60) || "익명 제보자",
       description: description || "영상 링크만 등록된 밈·챌린지 추가 요청입니다.",
       sourceUrl: sourceUrl.slice(0, 2000) || undefined,
+      originUrl: originUrl.slice(0, 2000) || undefined,
       subjectId: subjectId.slice(0, 120) || undefined,
     });
     return reply.code(201).send({ id: item.id, status: item.status });

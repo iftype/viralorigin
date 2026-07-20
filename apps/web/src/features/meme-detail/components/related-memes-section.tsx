@@ -14,8 +14,8 @@ export function RelatedMemesSection({ memes }: { memes: Meme[] }) {
     <section className="page-shell py-14 sm:py-20">
       <div className="mx-auto max-w-3xl">
         <p className="text-xs font-black text-black/35">MEME DICTIONARY</p>
-        <h2 className="mt-1 text-2xl font-black tracking-[-0.04em]">다른 밈·챌린지 알아보기</h2>
-        <p className="mt-2 text-sm text-black/45">대표 장면과 검토 상태를 보고 다음 항목을 골라보세요.</p>
+        <h2 className="mt-1 text-2xl font-black tracking-[-0.04em]">연결된 밈·다음 항목</h2>
+        <p className="mt-2 text-sm text-black/45">파생·연결 관계를 우선하고 비슷한 사전 항목도 함께 보여줍니다.</p>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           {memes.map((meme) => {
             const thumbnailUrl = getMemeCardThumbnail(

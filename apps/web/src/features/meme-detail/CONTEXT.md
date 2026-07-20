@@ -7,3 +7,5 @@
 - 구성: header, origin, video collection, timeline, comment, proposal board, thumbnail related dictionary 섹션을 개별 컴포넌트로 유지하고 `MemeDetail`은 순서만 조립한다.
 - 참여: 설명·원본·트렌딩·관련 영상·타임라인마다 수정 제안을 열고 토론 목록으로 연결한다.
 - 헤더의 수정 제안 토론 탭은 proposal board anchor와 서버 count를 표시한다. 확정 편집 이력은 아직 제공하지 않는다.
+- `relatedMemeIds`가 있으면 파생·연결 밈을 다른 추천보다 먼저 보여준다.
+- 최근 사용 신호 카드는 밈별 `봤어요/못 봤어요` 응답과 최근 14일 집계만 보여주는 프로토타입이다. 플랫폼 trend snapshot과는 별도 지표다.

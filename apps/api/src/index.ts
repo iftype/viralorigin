@@ -5,6 +5,7 @@ import { AdminAuth } from "./admin-auth.js";
 import { AdminInboxStore } from "./admin-store.js";
 import { CategoryStore } from "./category-store.js";
 import { MemeStore } from "./meme-store.js";
+import { MemePulseStore } from "./meme-pulse-store.js";
 import { MetadataSuggestionService } from "./metadata-suggestion.js";
 import { ParticipationStore } from "./participation-store.js";
 import { TrendStore } from "./trend-store.js";
@@ -14,6 +15,7 @@ import { registerCategoryRoutes } from "./routes/categories.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerIntakeRoutes } from "./routes/intake.js";
 import { registerMemeRoutes } from "./routes/memes.js";
+import { registerMemePulseRoutes } from "./routes/meme-pulse.js";
 import { registerParticipationRoutes } from "./routes/participation.js";
 import { registerSeoRoutes } from "./routes/seo.js";
 import { registerTrendRoutes } from "./routes/trends.js";
@@ -34,6 +36,9 @@ const inboxStore = new AdminInboxStore(
 );
 const memeStore = new MemeStore(
   process.env.MEME_DATA_FILE ?? "/opt/origin/shared/memes.json",
+);
+const pulseStore = new MemePulseStore(
+  process.env.MEME_PULSE_FILE ?? "/opt/origin/shared/meme-pulse.json",
 );
 const categoryStore = new CategoryStore(
   process.env.CATEGORY_DATA_FILE ?? "/opt/origin/shared/categories.json",
@@ -65,6 +70,7 @@ await app.register(cors, {
 registerHealthRoutes(app);
 registerCategoryRoutes(app, categoryStore);
 registerMemeRoutes(app, memeStore, categoryStore, participationStore);
+registerMemePulseRoutes(app, memeStore, pulseStore);
 registerIntakeRoutes(app, inboxStore);
 registerParticipationRoutes(app, { inboxStore, memeStore, participationStore });
 registerSeoRoutes(app, memeStore);

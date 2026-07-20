@@ -15,6 +15,7 @@ export class MemeStore {
       .map((item) => ({
         ...item,
         categoryIds: legacyCategoryIds(item),
+        relatedMemeIds: item.relatedMemeIds ?? [],
         sourceLinks: item.sourceLinks ?? [],
       }))
       .filter((item) => includeUnpublished || item.publicationStatus === "published")
@@ -32,6 +33,7 @@ export class MemeStore {
       ? {
           ...item,
           categoryIds: legacyCategoryIds(item),
+          relatedMemeIds: item.relatedMemeIds ?? [],
           sourceLinks: item.sourceLinks ?? [],
         }
       : null;

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Download, Search } from "lucide-react";
+import { ChevronDown, Download, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import type { AdminMeme } from "@/components/dictionary-manager";
@@ -25,8 +25,10 @@ const responseLabel: Record<QuizLog["response"], string> = {
 const shortSession = (sessionId: string) => `참여자 ${sessionId.slice(-6).toUpperCase()}`;
 const pairKey = (log: QuizLog) => `${log.sessionId}:${log.cardId}`;
 
-export function QuizLogManager({ logs, memes }: { logs: QuizLog[]; memes: Pick<AdminMeme, "id" | "title">[] }) {
+export function QuizLogManager({ logs, memes, onChange }: { logs: QuizLog[]; memes: Pick<AdminMeme, "id" | "title">[]; onChange: (logs: QuizLog[]) => void }) {
   const [query, setQuery] = useState("");
+  const [deleting, setDeleting] = useState("");
+  const [deleteError, setDeleteError] = useState("");
   const titleById = useMemo(() => new Map(memes.map((meme) => [meme.id, meme.title])), [memes]);
   const analysis = useMemo(() => {
     const ordered = [...logs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -77,6 +79,35 @@ export function QuizLogManager({ logs, memes }: { logs: QuizLog[]; memes: Pick<A
     URL.revokeObjectURL(url);
   }
 
+  async function deleteSession(sessionId: string) {
+    setDeleting(sessionId);
+    setDeleteError("");
+    try {
+      const response = await fetch(`/viral/api/v1/admin/quiz/logs/${encodeURIComponent(sessionId)}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("delete failed");
+      onChange(logs.filter((log) => log.sessionId !== sessionId));
+    } catch {
+      setDeleteError("기록을 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setDeleting("");
+    }
+  }
+
+  async function clearLogs() {
+    if (!confirm(`퀴즈 원시 로그 ${logs.length}건을 모두 삭제하시겠습니까?`)) return;
+    setDeleting("all");
+    setDeleteError("");
+    try {
+      const response = await fetch("/viral/api/v1/admin/quiz/logs", { method: "DELETE" });
+      if (!response.ok) throw new Error("delete failed");
+      onChange([]);
+    } catch {
+      setDeleteError("전체 기록을 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setDeleting("");
+    }
+  }
+
   const answerTotal = analysis.recognition.size;
   return (
     <section className="mt-5 space-y-4">
@@ -105,18 +136,22 @@ export function QuizLogManager({ logs, memes }: { logs: QuizLog[]; memes: Pick<A
       <section className="rounded-3xl border border-black/5 bg-white p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex-1"><h2 className="font-black">사람별 이용 기록</h2><p className="mt-1 text-xs text-black/40">로그인 없이 브라우저에 발급한 익명 ID로 묶었습니다.</p></div>
-          <button className="flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-black px-4 py-2.5 text-xs font-black text-white disabled:opacity-35" disabled={!logs.length} onClick={downloadCsv} type="button"><Download className="size-3.5" />CSV 저장</button>
+          <div className="flex gap-2"><button className="flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-black px-4 py-2.5 text-xs font-black text-white disabled:opacity-35" disabled={!logs.length} onClick={downloadCsv} type="button"><Download className="size-3.5" />CSV 저장</button><button className="flex cursor-pointer items-center justify-center gap-1.5 rounded-full bg-[#fff0f3] px-4 py-2.5 text-xs font-black text-[#d91d46] disabled:opacity-35" disabled={!logs.length || Boolean(deleting)} onClick={() => void clearLogs()} type="button"><Trash2 className="size-3.5" />전체 삭제</button></div>
         </div>
         <label className="relative mt-4 block"><span className="sr-only">참여자 또는 카드 검색</span><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-black/30" /><input className="w-full rounded-xl bg-[#f7f7f8] py-3 pl-9 pr-3 text-base outline-none" onChange={(event) => setQuery(event.target.value)} placeholder="참여자·밈 이름 검색" value={query} /></label>
         <div className="mt-3 space-y-2">
+          {deleteError && <p role="alert" className="rounded-xl bg-[#fff0f3] px-4 py-3 text-xs font-bold text-[#d91d46]">{deleteError}</p>}
           {sessionRows.map(([sessionId, entries]) => {
             const latestByCard = new Map<string, QuizLog>();
             entries.filter((entry) => entry.response === "know" || entry.response === "dont_know").forEach((entry) => latestByCard.set(entry.cardId, entry));
             const known = [...latestByCard.values()].filter((entry) => entry.response === "know").length;
             const detailCount = new Set(entries.filter((entry) => entry.response === "view_detail").map((entry) => entry.cardId)).size;
+            const startedAt = new Date(entries[0]?.timestamp ?? 0);
+            const endedAt = new Date(entries.at(-1)?.timestamp ?? 0);
+            const durationSeconds = Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 1000));
             return <details className="group rounded-2xl bg-[#f7f7f8] p-4" key={sessionId}>
-              <summary className="flex cursor-pointer list-none items-center gap-3"><div className="min-w-0 flex-1"><p className="font-black">{shortSession(sessionId)}</p><p className="mt-1 truncate text-[0.68rem] font-bold text-black/35">최근 {new Date(entries.at(-1)?.timestamp ?? 0).toLocaleString("ko-KR")} · 알아요 {known} · 몰라요 {latestByCard.size - known} · 상세 {detailCount}</p></div><ChevronDown className="size-4 shrink-0 text-black/30 transition group-open:rotate-180" /></summary>
-              <div className="mt-3 space-y-1.5 border-t border-black/5 pt-3">{[...entries].reverse().map((entry) => <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs" key={entry.id}><span className="min-w-0 flex-1 truncate font-bold">{titleById.get(entry.cardId) ?? entry.cardId}</span><span className="shrink-0 font-black text-black/55">{responseLabel[entry.response]}</span><time className="hidden shrink-0 text-black/30 sm:inline">{new Date(entry.timestamp).toLocaleString("ko-KR")}</time></div>)}</div>
+              <summary className="flex cursor-pointer list-none items-center gap-3"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-black">{shortSession(sessionId)}</p><span className={`rounded-full px-2 py-0.5 text-[0.62rem] font-black ${latestByCard.size >= 5 ? "bg-[#e8fffe] text-[#087b77]" : "bg-black/5 text-black/40"}`}>{latestByCard.size >= 5 ? "완료" : `${latestByCard.size}/5 진행`}</span></div><p className="mt-1 text-[0.68rem] font-bold leading-5 text-black/35">{startedAt.toLocaleString("ko-KR")} 시작 · {durationSeconds < 60 ? `${durationSeconds}초` : `${Math.floor(durationSeconds / 60)}분 ${durationSeconds % 60}초`} · 알아요 {known} · 몰라요 {latestByCard.size - known} · 상세 {detailCount}</p></div><ChevronDown className="size-4 shrink-0 text-black/30 transition group-open:rotate-180" /></summary>
+              <div className="mt-3 border-t border-black/5 pt-3"><div className="mb-2 flex items-center justify-between gap-2"><p className="text-[0.68rem] font-bold text-black/35">종료 {endedAt.toLocaleString("ko-KR")}</p><button className="flex cursor-pointer items-center gap-1 rounded-full bg-[#fff0f3] px-3 py-1.5 text-[0.68rem] font-black text-[#d91d46] disabled:opacity-35" disabled={Boolean(deleting)} onClick={(event) => { event.preventDefault(); void deleteSession(sessionId); }} type="button"><Trash2 className="size-3" />이 기록 삭제</button></div><div className="space-y-1.5">{[...entries].reverse().map((entry) => <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs" key={entry.id}><span className="min-w-0 flex-1 truncate font-bold">{titleById.get(entry.cardId) ?? entry.cardId}</span><span className="shrink-0 font-black text-black/55">{responseLabel[entry.response]}</span><time className="hidden shrink-0 text-black/30 sm:inline">{new Date(entry.timestamp).toLocaleString("ko-KR")}</time></div>)}</div></div>
             </details>;
           })}
           {!sessionRows.length && <p className="py-8 text-center text-sm font-bold text-black/30">조건에 맞는 기록이 없습니다.</p>}

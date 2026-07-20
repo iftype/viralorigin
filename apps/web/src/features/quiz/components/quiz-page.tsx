@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { AlertCircle, ArrowLeftRight, BarChart3, CheckCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowLeftRight, ArrowUpRight, BarChart3, CheckCircle, RefreshCw } from "lucide-react";
+import Link from "next/link";
 
 import { Button, Card } from "@origin/ui";
+import { memeHref } from "@/lib/meme-href";
 
 import { getOrCreateSessionId } from "../utils/session";
 import { QuizCard } from "./quiz-card";
@@ -11,11 +13,13 @@ import { QuizDetailModal } from "./quiz-detail-modal";
 
 interface QuizCardData {
   id: string;
+  slug: string;
   title: string;
   summary: string;
   type: "minor" | "origin";
   thumbnailUrl?: string;
   accentColor?: string;
+  field?: string;
   originDetail: {
     creator?: string;
     originYear?: number;
@@ -162,7 +166,7 @@ export function QuizPage() {
   const completed = currentIndex >= cards.length;
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col items-center overflow-hidden px-3 py-3 sm:page-shell sm:min-h-[80vh] sm:h-auto sm:overflow-visible sm:py-8">
+    <div className="flex h-[100dvh] w-full touch-none flex-col items-center overflow-hidden overscroll-none px-3 py-3 sm:page-shell sm:min-h-[80vh] sm:h-auto sm:touch-auto sm:overflow-visible sm:py-8">
       {!completed ? (
         <div className="flex min-h-0 w-full max-w-md flex-1 flex-col items-center gap-2 sm:flex-none sm:gap-6">
           <div className="w-full shrink-0 space-y-1 text-center sm:space-y-2">
@@ -210,7 +214,7 @@ export function QuizPage() {
           </div>
         </div>
       ) : (
-        <div className="flex min-h-0 w-full max-w-2xl flex-1 flex-col justify-center gap-3 sm:flex-none sm:gap-7">
+        <div className="flex min-h-0 w-full max-w-2xl flex-1 flex-col justify-center gap-2 sm:flex-none sm:gap-6">
           <div className="space-y-1 text-center sm:space-y-2">
             <CheckCircle className="mx-auto text-emerald-600" size={30} />
             <h1 className="text-2xl font-black tracking-tight sm:text-3xl">테스트 완료!</h1>
@@ -222,12 +226,17 @@ export function QuizPage() {
             <PersonalResult title="그 외 밈·챌린지" accent="var(--vo-color-signal)" {...personal.origin} />
           </div>
 
-          <Card className="space-y-3 border border-black/5 p-4 shadow-lg sm:space-y-5 sm:p-6">
+          <Card className="border border-black/5 p-2.5 sm:p-4">
+            <div className="flex items-center justify-between px-1"><h2 className="text-xs font-black sm:text-sm">내가 진행한 5개</h2><span className="text-[0.62rem] font-bold text-black/30">눌러서 원본 보기</span></div>
+            <div className="mt-1.5 grid gap-1 sm:grid-cols-2">{cards.map((card) => <Link className="flex min-w-0 items-center gap-2 rounded-lg bg-[#f7f7f8] px-2.5 py-1.5 text-xs font-bold" href={memeHref(card.slug)} key={card.id}><span className={`size-2 shrink-0 rounded-full ${responses[card.id] === "know" ? "bg-[#087b77]" : "bg-[#fe2c55]"}`} /><span className="min-w-0 flex-1 truncate">{card.title}</span><span className="shrink-0 text-[0.6rem] text-black/35">{responses[card.id] === "know" ? "알아요" : "몰라요"}</span><ArrowUpRight className="size-3 shrink-0" /></Link>)}</div>
+          </Card>
+
+          <Card className="space-y-2 border border-black/5 p-3 shadow-lg sm:space-y-5 sm:p-6">
             <div className="flex items-center gap-2">
               <BarChart3 size={21} />
               <div>
-                <h2 className="font-black">전체 누적 효과</h2>
-                <p className="text-xs text-neutral-400">인지도 응답과 상세 설명 피드백만 집계합니다.</p>
+                <h2 className="text-sm font-black sm:text-base">전체 누적 효과</h2>
+                <p className="hidden text-xs text-neutral-400 sm:block">인지도 응답과 상세 설명 피드백만 집계합니다.</p>
               </div>
             </div>
             {statsError ? (
@@ -250,7 +259,7 @@ export function QuizPage() {
             )}
           </Card>
 
-          <Button className="mx-auto" size="sm" onClick={() => void fetchCards()}>테스트 다시 하기</Button>
+          <Button className="mx-auto whitespace-nowrap" size="sm" onClick={() => void fetchCards()}>테스트 다시 하기</Button>
         </div>
       )}
 
@@ -282,9 +291,9 @@ function StatusState({ icon, title, description, children }: { icon: ReactNode; 
 function PersonalResult({ title, know, total, accent }: { title: string; know: number; total: number; accent: string }) {
   return (
     <Card className="space-y-2 border border-black/5 p-3 sm:space-y-3 sm:p-5">
-      <div className="flex items-end justify-between gap-3"><h2 className="font-black">{title}</h2><strong>{total > 0 ? `${know} / ${total}` : "출제 없음"}</strong></div>
+      <div className="flex items-end justify-between gap-2"><h2 className="text-xs font-black sm:text-base">{title}</h2><strong className="shrink-0 text-xs sm:text-base">{total > 0 ? `${know} / ${total}` : "출제 없음"}</strong></div>
       <div className="h-2.5 overflow-hidden rounded-full bg-neutral-100"><div className="h-full rounded-full" style={{ background: accent, width: `${percentage(know, total)}%` }} /></div>
-      <p className="text-xs text-neutral-400">{total > 0 ? `내가 알고 있다고 답한 비율 ${percentage(know, total)}%` : "이번 카드 묶음에는 포함되지 않았어요."}</p>
+      <p className="hidden text-xs text-neutral-400 sm:block">{total > 0 ? `내가 알고 있다고 답한 비율 ${percentage(know, total)}%` : "이번 카드 묶음에는 포함되지 않았어요."}</p>
     </Card>
   );
 }

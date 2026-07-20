@@ -40,9 +40,13 @@ export function DynamicMemeDetail() {
           : sampleMemes;
         if (!active) return;
         setMeme(detail.item);
-        setOtherMemes(
-          list.filter((candidate) => candidate.id !== detail.item.id).slice(0, 3),
-        );
+        const candidates = list.filter((candidate) => candidate.id !== detail.item.id);
+        const linkedIds = detail.item.relatedMemeIds ?? [];
+        const linked = linkedIds.flatMap((id) => {
+          const found = candidates.find((candidate) => candidate.id === id);
+          return found ? [found] : [];
+        });
+        setOtherMemes([...linked, ...candidates.filter((candidate) => !linkedIds.includes(candidate.id))].slice(0, 3));
       })
       .catch(() => {
         if (!active) return;

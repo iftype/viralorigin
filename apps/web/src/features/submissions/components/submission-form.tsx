@@ -8,6 +8,7 @@ type Submission = {
   title: string;
   author: string;
   sourceUrl: string;
+  originUrl?: string;
   createdAt: string;
 };
 
@@ -28,6 +29,7 @@ export function SubmissionForm() {
       title,
       author: String(form.get("author") ?? "익명 제보자").trim() || "익명 제보자",
       sourceUrl: String(form.get("sourceUrl") ?? "").trim(),
+      originUrl: String(form.get("originUrl") ?? "").trim() || undefined,
       createdAt: new Date().toISOString(),
     };
 
@@ -41,6 +43,7 @@ export function SubmissionForm() {
           title: submission.title,
           author: submission.author,
           sourceUrl: submission.sourceUrl,
+          originUrl: submission.originUrl,
         }),
       });
       if (!response.ok) throw new Error("submission failed");
@@ -96,6 +99,15 @@ export function SubmissionForm() {
             defaultValue="익명 제보자"
             maxLength={60}
             name="author"
+          />
+        </label>
+        <label className="block text-sm font-bold sm:col-span-2">
+          원본으로 알고 있는 링크 <span className="font-medium text-black/35">선택</span>
+          <input
+            className="mt-2 w-full rounded-xl border border-black/10 bg-[#f7f7f8] px-4 py-3 text-base outline-none focus:border-black"
+            name="originUrl"
+            placeholder="원본이 따로 있다면 주소를 붙여주세요"
+            type="url"
           />
         </label>
       </div>

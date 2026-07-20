@@ -93,3 +93,34 @@ jobs:
           rsync -az --delete --no-owner --no-group --exclude 'shared/' -e "ssh -p $SSH_PORT" .deploy/ "$SSH_TARGET:$ORACLE_DEPLOY_PATH/"
           ssh -p "$SSH_PORT" "$SSH_TARGET" \
             "cd '$ORACLE_DEPLOY_PATH' && corepack enable && pnpm install --prod --frozen-lockfile --filter @origin/api... && systemctl --user restart origin-api"
+
+      - name: Configure admin SSH
+        if: github.event_name == 'push' && vars.ADMIN_DEPLOY_ENABLED == 'true'
+        env:
+          ADMIN_ORACLE_HOST: ${{ secrets.ADMIN_ORACLE_HOST }}
+          ADMIN_ORACLE_SSH_KEY: ${{ secrets.ADMIN_ORACLE_SSH_KEY }}
+          ADMIN_ORACLE_SSH_PORT: ${{ secrets.ADMIN_ORACLE_SSH_PORT }}
+        shell: bash
+        run: |
+          test -n "$ADMIN_ORACLE_HOST"
+          test -n "$ADMIN_ORACLE_SSH_KEY"
+          printf '%s\n' "$ADMIN_ORACLE_SSH_KEY" > "$HOME/.ssh/id_admin_ed25519"
+          chmod 600 "$HOME/.ssh/id_admin_ed25519"
+          ssh-keyscan -p "${ADMIN_ORACLE_SSH_PORT:-22}" "$ADMIN_ORACLE_HOST" >> "$HOME/.ssh/known_hosts"
+
+      - name: Upload develop admin to iftype.store
+        if: github.event_name == 'push' && vars.ADMIN_DEPLOY_ENABLED == 'true'
+        env:
+          ADMIN_ORACLE_DEPLOY_PATH: ${{ secrets.ADMIN_ORACLE_DEPLOY_PATH }}
+          ADMIN_ORACLE_HOST: ${{ secrets.ADMIN_ORACLE_HOST }}
+          ADMIN_ORACLE_SSH_PORT: ${{ secrets.ADMIN_ORACLE_SSH_PORT }}
+          ADMIN_ORACLE_USER: ${{ secrets.ADMIN_ORACLE_USER }}
+        shell: bash
+        run: |
+          test -n "$ADMIN_ORACLE_DEPLOY_PATH"
+          test -n "$ADMIN_ORACLE_USER"
+          SSH_TARGET="$ADMIN_ORACLE_USER@$ADMIN_ORACLE_HOST"
+          SSH_PORT="${ADMIN_ORACLE_SSH_PORT:-22}"
+          ssh -i "$HOME/.ssh/id_admin_ed25519" -p "$SSH_PORT" "$SSH_TARGET" "mkdir -p '$ADMIN_ORACLE_DEPLOY_PATH'"
+          rsync -az --delete --no-owner --no-group -e "ssh -i $HOME/.ssh/id_admin_ed25519 -p $SSH_PORT" \
+            .deploy/apps/admin/out/ "$SSH_TARGET:$ADMIN_ORACLE_DEPLOY_PATH/"
