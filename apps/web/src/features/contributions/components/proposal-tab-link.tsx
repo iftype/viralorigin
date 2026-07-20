@@ -25,5 +25,5 @@ export function ProposalTabLink({ initialCount = 0, memeId, memeSlug }: { initia
     return () => window.removeEventListener(participationUpdateEvent, refresh);
   }, [load]);
 
-  return <Link className="inline-flex items-center gap-1.5 rounded-full bg-black px-3 py-2 text-xs font-black text-white" href={`/proposals?meme=${encodeURIComponent(memeSlug)}`}><MessageSquareText className="size-3.5" />수정 제안 <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[0.62rem]">{count}</span></Link>;
+  return <Link className="inline-flex items-center gap-1.5 rounded-full bg-black px-3 py-2 text-xs font-black text-white" href={`/proposals?meme=${encodeURIComponent(memeSlug)}`}><MessageSquareText className="size-3.5" />수정 제안 토론 <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[0.62rem]">{count}</span></Link>;
 }
