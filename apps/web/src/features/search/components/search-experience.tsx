@@ -9,7 +9,6 @@ import { Badge, EmptyState, buttonClassName } from "@origin/ui";
 import { sampleMemes } from "@/data/sample-memes";
 import type { Meme, MemeCategory } from "@/types/meme";
 
-import { CategoryTabs } from "./category-tabs";
 import { MemeCard } from "./meme-card";
 import { VerificationTabs, type VerificationFilter } from "./verification-tabs";
 import { YearTabs, type YearFilter } from "./year-tabs";
@@ -19,7 +18,6 @@ export function SearchExperience() {
   const query = useSearchParams().get("q")?.trim() ?? "";
   const [memes, setMemes] = useState<Meme[]>([]);
   const [categories, setCategories] = useState<MemeCategory[]>([]);
-  const [activeCategory, setActiveCategory] = useState("all");
   const [verificationFilter, setVerificationFilter] = useState<VerificationFilter>("all");
   const [yearFilter, setYearFilter] = useState<YearFilter>("all");
   const [isLoading, setIsLoading] = useState(true);
@@ -99,20 +97,9 @@ export function SearchExperience() {
     [newestYear, statusFilteredMemes, yearFilter],
   );
 
-  const counts = useMemo(
-    () =>
-      Object.fromEntries(
-        [["all", yearFilteredMemes.length], ...categories.map((category) => [
-          category.id,
-          yearFilteredMemes.filter((meme) => meme.categoryIds.includes(category.id)).length,
-        ])],
-      ) as Record<string, number>,
-    [categories, yearFilteredMemes],
-  );
-
   const visibleMemes = useMemo(
-    () => filterMemes(yearFilteredMemes, activeCategory, query),
-    [activeCategory, query, yearFilteredMemes],
+    () => filterMemes(yearFilteredMemes, "all", query),
+    [query, yearFilteredMemes],
   );
 
   return (
@@ -157,20 +144,11 @@ export function SearchExperience() {
       </div>
 
       <div className="mt-6">
-        <VerificationTabs active={verificationFilter} counts={verificationCounts} onChange={(filter) => { setVerificationFilter(filter); setActiveCategory("all"); }} />
+        <VerificationTabs active={verificationFilter} counts={verificationCounts} onChange={setVerificationFilter} />
       </div>
 
       <div className="mt-3">
-        <YearTabs active={yearFilter} counts={yearCounts} onChange={(filter) => { setYearFilter(filter); setActiveCategory("all"); }} years={years} />
-      </div>
-
-      <div className="mt-1">
-        <CategoryTabs
-          active={activeCategory}
-          categories={categories}
-          counts={counts}
-          onChange={setActiveCategory}
-        />
+        <YearTabs active={yearFilter} counts={yearCounts} onChange={setYearFilter} years={years} />
       </div>
 
       <section className="mt-4" aria-busy={isLoading} aria-live="polite">
@@ -198,7 +176,7 @@ export function SearchExperience() {
           <EmptyState
             icon="🫥"
             title="아직 기록이 없어요"
-            description="검색어나 카테고리를 바꿔보거나, 찾는 밈을 운영자에게 알려주세요."
+            description="검색어나 확인 상태를 바꿔보거나, 찾는 밈을 운영자에게 알려주세요."
             action={
               <Link
                 className={buttonClassName({ variant: "secondary" })}

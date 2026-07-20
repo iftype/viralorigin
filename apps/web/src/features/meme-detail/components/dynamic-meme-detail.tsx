@@ -46,16 +46,15 @@ export function DynamicMemeDetail() {
           const found = candidates.find((candidate) => candidate.id === id);
           return found ? [found] : [];
         });
-        setOtherMemes([...linked, ...candidates.filter((candidate) => !linkedIds.includes(candidate.id))].slice(0, 3));
+        setOtherMemes(linked.slice(0, 12));
       })
       .catch(() => {
         if (!active) return;
         const fallback = getMemeBySlug(slug);
         if (fallback) {
           setMeme(fallback);
-          setOtherMemes(
-            sampleMemes.filter((candidate) => candidate.id !== fallback.id).slice(0, 3),
-          );
+          const linkedIds = fallback.relatedMemeIds ?? [];
+          setOtherMemes(sampleMemes.filter((candidate) => linkedIds.includes(candidate.id)));
         } else {
           setError("아직 공개되지 않았거나 찾을 수 없는 사전 항목입니다.");
         }

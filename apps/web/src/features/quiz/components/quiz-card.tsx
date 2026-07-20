@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from "react";
-import { Info, Check, X } from "lucide-react";
+import { Play, Check, X } from "lucide-react";
 import { Card } from "@origin/ui";
 
 interface QuizCardData {
@@ -211,10 +211,10 @@ export function QuizCard({ card, active, onSwipe, onViewDetail }: QuizCardProps)
                 e.stopPropagation();
                 onViewDetail();
               }}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--vo-radius-md)] border border-neutral-200/50 bg-neutral-50 px-4 py-2.5 text-sm font-bold text-neutral-800 transition-all duration-200 hover:scale-[1.01] hover:bg-neutral-100 active:scale-[0.99] sm:py-3.5"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-[var(--vo-radius-md)] bg-black px-4 py-2.5 text-sm font-black text-white shadow-sm transition-all duration-200 hover:scale-[1.01] hover:bg-black/85 active:scale-[0.99] sm:py-3.5"
             >
-              <Info size={16} />
-              궁금해요! 상세 정보 보기
+              <Play className="fill-current" size={16} />
+              영상 보러 가기
             </button>
           </div>
         </div>

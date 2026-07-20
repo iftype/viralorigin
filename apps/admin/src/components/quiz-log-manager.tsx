@@ -10,16 +10,24 @@ export type QuizLog = {
   sessionId: string;
   cardId: string;
   cardType: "minor" | "origin";
-  response: "know" | "dont_know" | "view_detail" | "helpful" | "not_helpful";
+  response: "start" | "know" | "dont_know" | "view_detail" | "view_media" | "helpful" | "not_helpful" | "complete" | "open_meme" | "open_service";
+  runId?: string;
+  step?: number;
+  destination?: string;
   timestamp: string;
 };
 
 const responseLabel: Record<QuizLog["response"], string> = {
+  start: "테스트 시작",
   know: "알아요",
   dont_know: "몰라요",
   view_detail: "상세 보기",
+  view_media: "영상 보기",
   helpful: "설명이 도움됨",
   not_helpful: "설명이 아쉬움",
+  complete: "테스트 완료",
+  open_meme: "밈 상세 유입",
+  open_service: "서비스 유입",
 };
 
 const shortSession = (sessionId: string) => `참여자 ${sessionId.slice(-6).toUpperCase()}`;
@@ -35,13 +43,15 @@ export function QuizLogManager({ logs, memes, onChange }: { logs: QuizLog[]; mem
     const recognition = new Map<string, QuizLog>();
     const details = new Map<string, QuizLog>();
     const sessions = new Map<string, QuizLog[]>();
+    const runs = new Map<string, QuizLog[]>();
     const cards = new Map<string, { type: QuizLog["cardType"]; know: Set<string>; dontKnow: Set<string>; details: Set<string> }>();
 
     for (const log of ordered) {
       const key = pairKey(log);
       if (log.response === "know" || log.response === "dont_know") recognition.set(key, log);
-      if (log.response === "view_detail") details.set(key, log);
+      if (log.response === "view_detail" || log.response === "view_media") details.set(key, log);
       sessions.set(log.sessionId, [...(sessions.get(log.sessionId) ?? []), log]);
+      if (log.runId) runs.set(log.runId, [...(runs.get(log.runId) ?? []), log]);
     }
     for (const log of recognition.values()) {
       const card = cards.get(log.cardId) ?? { type: log.cardType, know: new Set(), dontKnow: new Set(), details: new Set() };
@@ -54,7 +64,17 @@ export function QuizLogManager({ logs, memes, onChange }: { logs: QuizLog[]; mem
       cards.set(source.cardId, card);
     }
     const known = [...recognition.values()].filter((log) => log.response === "know").length;
-    return { ordered, recognition, details, sessions, cards, known };
+    const funnel = { started: 0, reached: [0, 0, 0, 0, 0], completed: 0, viewedMedia: 0, openedMeme: 0, openedService: 0, destinations: new Map<string, number>() };
+    for (const entries of runs.values()) {
+      if (entries.some((log) => log.response === "start")) funnel.started += 1;
+      for (let step = 1; step <= 5; step += 1) if (entries.some((log) => (log.response === "know" || log.response === "dont_know") && log.step === step)) funnel.reached[step - 1] += 1;
+      if (entries.some((log) => log.response === "complete")) funnel.completed += 1;
+      if (entries.some((log) => log.response === "view_media")) funnel.viewedMedia += 1;
+      if (entries.some((log) => log.response === "open_meme")) funnel.openedMeme += 1;
+      if (entries.some((log) => log.response === "open_service")) funnel.openedService += 1;
+      for (const log of entries.filter((entry) => (entry.response === "view_media" || entry.response === "open_meme" || entry.response === "open_service") && entry.destination)) funnel.destinations.set(log.destination!, (funnel.destinations.get(log.destination!) ?? 0) + 1);
+    }
+    return { ordered, recognition, details, sessions, cards, known, funnel };
   }, [logs]);
 
   const sessionRows = useMemo(() => [...analysis.sessions.entries()]
@@ -67,8 +87,8 @@ export function QuizLogManager({ logs, memes, onChange }: { logs: QuizLog[]; mem
 
   function downloadCsv() {
     if (!logs.length) return;
-    const rows = [["session_id", "card_id", "card_title", "card_type", "response", "timestamp"], ...logs.map((log) => [
-      log.sessionId, log.cardId, titleById.get(log.cardId) ?? log.cardId, log.cardType, log.response, log.timestamp,
+    const rows = [["session_id", "run_id", "step", "card_id", "card_title", "card_type", "response", "destination", "timestamp"], ...logs.map((log) => [
+      log.sessionId, log.runId ?? "", log.step ?? "", log.cardId, titleById.get(log.cardId) ?? log.cardId, log.cardType, log.response, log.destination ?? "", log.timestamp,
     ])];
     const content = rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob(["\uFEFF", content], { type: "text/csv;charset=utf-8" }));
@@ -116,9 +136,21 @@ export function QuizLogManager({ logs, memes, onChange }: { logs: QuizLog[]; mem
           ["익명 참여자", `${analysis.sessions.size}명`, "브라우저별 익명 ID"],
           ["판단한 카드", `${answerTotal}건`, "같은 사람·카드는 마지막 응답만"],
           ["알고 있어요", answerTotal ? `${Math.round((analysis.known / answerTotal) * 100)}%` : "집계 전", `${analysis.known}/${answerTotal}건`],
-          ["상세 확인", `${analysis.details.size}건`, "중복 열람 제외"],
+          ["영상 확인", `${analysis.details.size}건`, "중복 열람 제외"],
         ].map(([label, value, note]) => <article className="rounded-2xl border border-black/5 bg-white p-5" key={label}><p className="text-xs font-black text-black/40">{label}</p><p className="mt-2 text-2xl font-black">{value}</p><p className="mt-1 text-[0.68rem] text-black/35">{note}</p></article>)}
       </div>
+
+      <section className="rounded-3xl border border-black/5 bg-white p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-base font-black">퀴즈 퍼널</h2><p className="mt-1 text-xs text-black/40">실행별로 시작→카드 1~5→완료→서비스 유입을 확인합니다.</p></div><div className="flex gap-2 text-xs font-black"><span className="rounded-full bg-[#e8fffe] px-3 py-1.5 text-[#087b77]">영상 {analysis.funnel.viewedMedia}</span><span className="rounded-full bg-[#fff0f3] px-3 py-1.5 text-[#d91d46]">밈 상세 {analysis.funnel.openedMeme}</span></div></div>
+        <div className="hide-scrollbar mt-4 flex gap-2 overflow-x-auto pb-2">
+          {[["시작", analysis.funnel.started], ...analysis.funnel.reached.map((count, index) => [`${index + 1}번`, count] as [string, number]), ["완료", analysis.funnel.completed], ["서비스 유입", analysis.funnel.openedService]].map(([label, count], index, stages) => {
+            const previous = index > 0 ? Number(stages[index - 1][1]) : Number(count);
+            const lost = Math.max(0, previous - Number(count));
+            return <article className="min-w-[7rem] flex-1 rounded-2xl bg-[#f7f7f8] p-3" key={String(label)}><p className="text-[0.65rem] font-black text-black/35">{label}</p><p className="mt-1 text-xl font-black">{count}</p>{index > 0 && <p className={`mt-1 text-[0.62rem] font-bold ${lost ? "text-[#d91d46]" : "text-black/25"}`}>이전 단계 이탈 {lost}</p>}</article>;
+          })}
+        </div>
+        {analysis.funnel.destinations.size > 0 && <div className="mt-3 flex flex-wrap gap-2">{[...analysis.funnel.destinations.entries()].sort(([, a], [, b]) => b - a).map(([destination, count]) => <span className="rounded-full bg-black px-3 py-1.5 text-[0.68rem] font-black text-white" key={destination}>{destination} · {count}</span>)}</div>}
+      </section>
 
       <section className="rounded-3xl border border-black/5 bg-white p-5">
         <h2 className="text-base font-black">카드별 반응</h2>
@@ -126,7 +158,7 @@ export function QuizLogManager({ logs, memes, onChange }: { logs: QuizLog[]; mem
           {[...analysis.cards.entries()].sort(([, a], [, b]) => b.know.size + b.dontKnow.size - a.know.size - a.dontKnow.size).map(([cardId, card]) => (
             <article className="rounded-2xl bg-[#f7f7f8] p-4" key={cardId}>
               <div className="flex items-start justify-between gap-3"><div><p className="font-black">{titleById.get(cardId) ?? cardId}</p><p className="mt-1 text-[0.68rem] font-bold text-black/35">{card.type === "minor" ? "마이너 밈" : "원본·챌린지"}</p></div><span className="rounded-full bg-white px-2 py-1 text-[0.65rem] font-black">{card.know.size + card.dontKnow.size}명</span></div>
-              <div className="mt-3 flex gap-3 text-xs font-bold"><span className="text-[#087b77]">알아요 {card.know.size}</span><span className="text-[#d91d46]">몰라요 {card.dontKnow.size}</span><span className="text-[#9a6200]">상세 {card.details.size}</span></div>
+              <div className="mt-3 flex gap-3 text-xs font-bold"><span className="text-[#087b77]">알아요 {card.know.size}</span><span className="text-[#d91d46]">몰라요 {card.dontKnow.size}</span><span className="text-[#9a6200]">영상 {card.details.size}</span></div>
             </article>
           ))}
           {!analysis.cards.size && <p className="py-8 text-center text-sm font-bold text-black/30 sm:col-span-2">아직 기록이 없습니다.</p>}
@@ -145,13 +177,13 @@ export function QuizLogManager({ logs, memes, onChange }: { logs: QuizLog[]; mem
             const latestByCard = new Map<string, QuizLog>();
             entries.filter((entry) => entry.response === "know" || entry.response === "dont_know").forEach((entry) => latestByCard.set(entry.cardId, entry));
             const known = [...latestByCard.values()].filter((entry) => entry.response === "know").length;
-            const detailCount = new Set(entries.filter((entry) => entry.response === "view_detail").map((entry) => entry.cardId)).size;
+            const detailCount = new Set(entries.filter((entry) => entry.response === "view_detail" || entry.response === "view_media").map((entry) => entry.cardId)).size;
             const startedAt = new Date(entries[0]?.timestamp ?? 0);
             const endedAt = new Date(entries.at(-1)?.timestamp ?? 0);
             const durationSeconds = Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 1000));
             return <details className="group rounded-2xl bg-[#f7f7f8] p-4" key={sessionId}>
               <summary className="flex cursor-pointer list-none items-center gap-3"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-black">{shortSession(sessionId)}</p><span className={`rounded-full px-2 py-0.5 text-[0.62rem] font-black ${latestByCard.size >= 5 ? "bg-[#e8fffe] text-[#087b77]" : "bg-black/5 text-black/40"}`}>{latestByCard.size >= 5 ? "완료" : `${latestByCard.size}/5 진행`}</span></div><p className="mt-1 text-[0.68rem] font-bold leading-5 text-black/35">{startedAt.toLocaleString("ko-KR")} 시작 · {durationSeconds < 60 ? `${durationSeconds}초` : `${Math.floor(durationSeconds / 60)}분 ${durationSeconds % 60}초`} · 알아요 {known} · 몰라요 {latestByCard.size - known} · 상세 {detailCount}</p></div><ChevronDown className="size-4 shrink-0 text-black/30 transition group-open:rotate-180" /></summary>
-              <div className="mt-3 border-t border-black/5 pt-3"><div className="mb-2 flex items-center justify-between gap-2"><p className="text-[0.68rem] font-bold text-black/35">종료 {endedAt.toLocaleString("ko-KR")}</p><button className="flex cursor-pointer items-center gap-1 rounded-full bg-[#fff0f3] px-3 py-1.5 text-[0.68rem] font-black text-[#d91d46] disabled:opacity-35" disabled={Boolean(deleting)} onClick={(event) => { event.preventDefault(); void deleteSession(sessionId); }} type="button"><Trash2 className="size-3" />이 기록 삭제</button></div><div className="space-y-1.5">{[...entries].reverse().map((entry) => <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs" key={entry.id}><span className="min-w-0 flex-1 truncate font-bold">{titleById.get(entry.cardId) ?? entry.cardId}</span><span className="shrink-0 font-black text-black/55">{responseLabel[entry.response]}</span><time className="hidden shrink-0 text-black/30 sm:inline">{new Date(entry.timestamp).toLocaleString("ko-KR")}</time></div>)}</div></div>
+              <div className="mt-3 border-t border-black/5 pt-3"><div className="mb-2 flex items-center justify-between gap-2"><p className="text-[0.68rem] font-bold text-black/35">종료 {endedAt.toLocaleString("ko-KR")}</p><button className="flex cursor-pointer items-center gap-1 rounded-full bg-[#fff0f3] px-3 py-1.5 text-[0.68rem] font-black text-[#d91d46] disabled:opacity-35" disabled={Boolean(deleting)} onClick={(event) => { event.preventDefault(); void deleteSession(sessionId); }} type="button"><Trash2 className="size-3" />이 기록 삭제</button></div><div className="space-y-1.5">{[...entries].reverse().map((entry) => <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs" key={entry.id}><span className="min-w-0 flex-1 truncate font-bold">{titleById.get(entry.cardId) ?? entry.destination ?? entry.cardId}</span>{entry.step !== undefined && <span className="shrink-0 text-[0.62rem] font-bold text-black/25">{entry.step}단계</span>}<span className="shrink-0 font-black text-black/55">{responseLabel[entry.response]}</span><time className="hidden shrink-0 text-black/30 sm:inline">{new Date(entry.timestamp).toLocaleString("ko-KR")}</time></div>)}</div></div>
             </details>;
           })}
           {!sessionRows.length && <p className="py-8 text-center text-sm font-bold text-black/30">조건에 맞는 기록이 없습니다.</p>}

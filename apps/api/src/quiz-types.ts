@@ -29,7 +29,10 @@ export type QuizLog = {
   sessionId: string;
   cardId: string;
   cardType: "minor" | "origin";
-  response: "know" | "dont_know" | "view_detail" | "helpful" | "not_helpful";
+  response: "start" | "know" | "dont_know" | "view_detail" | "view_media" | "helpful" | "not_helpful" | "complete" | "open_meme" | "open_service";
+  runId?: string;
+  step?: number;
+  destination?: string;
   timestamp: string;
 };
 

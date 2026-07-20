@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { AlertCircle, ArrowLeftRight, ArrowUpRight, BarChart3, CheckCircle, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { AlertCircle, ArrowLeftRight, ArrowUpRight, BarChart3, CheckCircle, Home, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
-import { Button, Card } from "@origin/ui";
+import { Button, Card, buttonClassName } from "@origin/ui";
 import { memeHref } from "@/lib/meme-href";
 
 import { getOrCreateSessionId } from "../utils/session";
@@ -41,9 +41,10 @@ interface QuizTypeStats {
 interface StatsData {
   totalLogs: number;
   stats: { minor: QuizTypeStats; origin: QuizTypeStats };
+  perCard?: Record<string, { know: number; dont_know: number; total: number }>;
 }
 
-type QuizResponse = "know" | "dont_know" | "view_detail" | "helpful" | "not_helpful";
+type QuizResponse = "start" | "know" | "dont_know" | "view_media" | "complete" | "open_meme" | "open_service";
 
 function percentage(value: number, total: number) {
   return total > 0 ? Math.round((value / total) * 100) : 0;
@@ -58,10 +59,20 @@ export function QuizPage() {
   const [responses, setResponses] = useState<Record<string, "know" | "dont_know">>({});
   const [stats, setStats] = useState<StatsData | null>(null);
   const [statsError, setStatsError] = useState(false);
-  const [sessionId, setSessionId] = useState("");
+  const [runId, setRunId] = useState("");
+  const completedRuns = useRef(new Set<string>());
 
-  useEffect(() => {
-    Promise.resolve().then(() => setSessionId(getOrCreateSessionId()));
+  const postLog = useCallback(async (payload: { cardId: string; cardType: QuizCardData["type"]; response: QuizResponse; runId: string; step?: number; destination?: string }) => {
+    try {
+      await fetch("/api/v1/quiz/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: getOrCreateSessionId(), ...payload }),
+        keepalive: true,
+      });
+    } catch {
+      // 퀴즈 진행은 분석 로그 저장 실패와 독립적으로 유지한다.
+    }
   }, []);
 
   const fetchCards = useCallback(async () => {
@@ -73,42 +84,33 @@ export function QuizPage() {
       const response = await fetch("/api/v1/quiz/cards", { cache: "no-store" });
       if (!response.ok) throw new Error("퀴즈 카드를 불러오지 못했습니다.");
       const data = (await response.json()) as { cards?: QuizCardData[] };
-      setCards(Array.isArray(data.cards) ? data.cards : []);
+      const fetchedCards = Array.isArray(data.cards) ? data.cards : [];
+      const nextRunId = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `quiz-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      setCards(fetchedCards);
+      setRunId(nextRunId);
       setCurrentIndex(0);
       setResponses({});
+      if (fetchedCards[0]) void postLog({ cardId: "quiz", cardType: fetchedCards[0].type, response: "start", runId: nextRunId, step: 0 });
     } catch (cause) {
       setCards([]);
       setError(cause instanceof Error ? cause.message : "퀴즈 카드를 불러오지 못했습니다.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [postLog]);
 
   useEffect(() => {
     Promise.resolve().then(() => void fetchCards());
   }, [fetchCards]);
 
-  const sendLog = useCallback(async (card: QuizCardData, response: QuizResponse) => {
-    const activeSessionId = sessionId || getOrCreateSessionId();
-    if (!activeSessionId) return;
-    try {
-      await fetch("/api/v1/quiz/log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: activeSessionId, cardId: card.id, cardType: card.type, response }),
-        keepalive: true,
-      });
-    } catch {
-      // 퀴즈 진행은 분석 로그 저장 실패와 독립적으로 유지한다.
-    }
-  }, [sessionId]);
+  const sendLog = useCallback((card: QuizCardData, response: QuizResponse, options?: { destination?: string; step?: number }) => postLog({ cardId: card.id, cardType: card.type, response, runId, step: options?.step, destination: options?.destination }), [postLog, runId]);
 
   const handleSwipe = (direction: "left" | "right") => {
     const card = cards[currentIndex];
     if (!card) return;
     const answer = direction === "right" ? "know" : "dont_know";
     setResponses((current) => ({ ...current, [card.id]: answer }));
-    void sendLog(card, answer);
+    void sendLog(card, answer, { step: currentIndex + 1 });
     setCurrentIndex((current) => current + 1);
   };
 
@@ -124,11 +126,13 @@ export function QuizPage() {
   }, []);
 
   useEffect(() => {
-    if (cards.length > 0 && currentIndex >= cards.length) {
-      const timer = window.setTimeout(() => void fetchStats(), 250);
+    if (cards.length > 0 && currentIndex >= cards.length && runId && !completedRuns.current.has(runId)) {
+      completedRuns.current.add(runId);
+      void postLog({ cardId: "quiz", cardType: cards[0]?.type ?? "origin", response: "complete", runId, step: cards.length });
+      const timer = window.setTimeout(() => void fetchStats(), 350);
       return () => window.clearTimeout(timer);
     }
-  }, [cards.length, currentIndex, fetchStats]);
+  }, [cards, currentIndex, fetchStats, postLog, runId]);
 
   const personal = useMemo(() => {
     const build = (type: QuizCardData["type"]) => {
@@ -198,17 +202,17 @@ export function QuizPage() {
                 onSwipe={handleSwipe}
                 onViewDetail={() => {
                   setSelectedCard(card);
-                  void sendLog(card, "view_detail");
+                  void sendLog(card, "view_media", { destination: memeHref(card.slug), step: currentIndex + 1 });
                 }}
               />
             ))}
           </div>
 
           <div className="flex w-full shrink-0 items-center justify-between gap-2 px-1 sm:gap-4 sm:px-4">
-            <button className="flex-1 cursor-pointer rounded-xl border border-rose-200 px-3 py-2.5 text-xs font-extrabold text-rose-500 hover:bg-rose-50 sm:px-4 sm:py-3 sm:text-sm" onClick={() => handleSwipe("left")}>
+            <button className="flex-1 cursor-pointer rounded-xl bg-[#fe2c55] px-3 py-2.5 text-xs font-black text-white shadow-sm hover:bg-[#e51f48] sm:px-4 sm:py-3 sm:text-sm" onClick={() => handleSwipe("left")}>
               몰라요 (NO)
             </button>
-            <button className="flex-1 cursor-pointer rounded-xl border border-emerald-200 px-3 py-2.5 text-xs font-extrabold text-emerald-600 hover:bg-emerald-50 sm:px-4 sm:py-3 sm:text-sm" onClick={() => handleSwipe("right")}>
+            <button className="flex-1 cursor-pointer rounded-xl bg-black px-3 py-2.5 text-xs font-black text-white shadow-sm hover:bg-black/80 sm:px-4 sm:py-3 sm:text-sm" onClick={() => handleSwipe("right")}>
               알아요 (KNOW)
             </button>
           </div>
@@ -218,7 +222,7 @@ export function QuizPage() {
           <div className="space-y-1 text-center sm:space-y-2">
             <CheckCircle className="mx-auto text-emerald-600" size={30} />
             <h1 className="text-2xl font-black tracking-tight sm:text-3xl">테스트 완료!</h1>
-            <p className="text-xs text-neutral-500 sm:text-sm">내 인지도와 설명 도움률을 나눠서 보여드려요.</p>
+            <p className="text-xs text-neutral-500 sm:text-sm">내 결과와 다른 참여자의 인지도를 함께 확인해보세요.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:gap-4">
@@ -227,16 +231,16 @@ export function QuizPage() {
           </div>
 
           <Card className="border border-black/5 p-2.5 sm:p-4">
-            <div className="flex items-center justify-between px-1"><h2 className="text-xs font-black sm:text-sm">내가 진행한 5개</h2><span className="text-[0.62rem] font-bold text-black/30">눌러서 원본 보기</span></div>
-            <div className="mt-1.5 grid gap-1 sm:grid-cols-2">{cards.map((card) => <Link className="flex min-w-0 items-center gap-2 rounded-lg bg-[#f7f7f8] px-2.5 py-1.5 text-xs font-bold" href={memeHref(card.slug)} key={card.id}><span className={`size-2 shrink-0 rounded-full ${responses[card.id] === "know" ? "bg-[#087b77]" : "bg-[#fe2c55]"}`} /><span className="min-w-0 flex-1 truncate">{card.title}</span><span className="shrink-0 text-[0.6rem] text-black/35">{responses[card.id] === "know" ? "알아요" : "몰라요"}</span><ArrowUpRight className="size-3 shrink-0" /></Link>)}</div>
+            <div className="flex items-center justify-between px-1"><h2 className="text-xs font-black sm:text-sm">내가 진행한 5개</h2><span className="text-[0.62rem] font-bold text-black/30">상세 페이지로 이동</span></div>
+            <div className="mt-1.5 grid gap-1 sm:grid-cols-2">{cards.map((card) => <Link className="flex min-w-0 items-center gap-2 rounded-lg bg-[#f7f7f8] px-2.5 py-1.5 text-xs font-bold" href={memeHref(card.slug)} key={card.id} onClick={() => void sendLog(card, "open_meme", { destination: memeHref(card.slug), step: cards.length })}><span className={`size-2 shrink-0 rounded-full ${responses[card.id] === "know" ? "bg-[#087b77]" : "bg-[#fe2c55]"}`} /><span className="min-w-0 flex-1 truncate">{card.title}</span><span className="shrink-0 text-[0.6rem] text-black/40">더 알아보기</span><ArrowUpRight className="size-3 shrink-0" /></Link>)}</div>
           </Card>
 
           <Card className="space-y-2 border border-black/5 p-3 shadow-lg sm:space-y-5 sm:p-6">
             <div className="flex items-center gap-2">
               <BarChart3 size={21} />
               <div>
-                <h2 className="text-sm font-black sm:text-base">전체 누적 효과</h2>
-                <p className="hidden text-xs text-neutral-400 sm:block">인지도 응답과 상세 설명 피드백만 집계합니다.</p>
+                <h2 className="text-sm font-black sm:text-base">다른 사람들은?</h2>
+                <p className="hidden text-xs text-neutral-400 sm:block">다른 참여자가 알고 있다고 답한 비율입니다.</p>
               </div>
             </div>
             {statsError ? (
@@ -248,10 +252,8 @@ export function QuizPage() {
                 <Metric label="마이너 밈 인지도" value={`${percentage(stats.stats.minor.know, stats.stats.minor.total)}%`} />
                 <Metric label="그 외 인지도" value={`${percentage(stats.stats.origin.know, stats.stats.origin.total)}%`} />
                 <Metric
-                  label="설명 도움률"
-                  value={stats.stats.minor.feedbackTotal + stats.stats.origin.feedbackTotal > 0
-                    ? `${percentage(stats.stats.minor.helpful + stats.stats.origin.helpful, stats.stats.minor.feedbackTotal + stats.stats.origin.feedbackTotal)}%`
-                    : "집계 전"}
+                  label="영상 확인"
+                  value={`${stats.stats.minor.view_detail + stats.stats.origin.view_detail}회`}
                 />
               </div>
             ) : (
@@ -259,7 +261,10 @@ export function QuizPage() {
             )}
           </Card>
 
-          <Button className="mx-auto whitespace-nowrap" size="sm" onClick={() => void fetchCards()}>테스트 다시 하기</Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button className="w-full whitespace-nowrap" size="sm" variant="secondary" onClick={() => void fetchCards()}>테스트 다시 하기</Button>
+            <Link className={buttonClassName({ size: "sm", className: "w-full whitespace-nowrap" })} href="/" onClick={() => void postLog({ cardId: "home", cardType: cards[0]?.type ?? "origin", response: "open_service", runId, step: cards.length, destination: "/" })}><Home className="size-4" />서비스 보러 가기</Link>
+          </div>
         </div>
       )}
 
@@ -267,10 +272,7 @@ export function QuizPage() {
         <QuizDetailModal
           card={selectedCard}
           onClose={() => setSelectedCard(null)}
-          onFeedback={(helpful) => {
-            void sendLog(selectedCard, helpful ? "helpful" : "not_helpful");
-            setSelectedCard(null);
-          }}
+          onOpenPage={() => void sendLog(selectedCard, "open_meme", { destination: memeHref(selectedCard.slug), step: currentIndex + 1 })}
         />
       )}
     </div>

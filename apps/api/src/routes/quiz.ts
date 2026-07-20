@@ -7,11 +7,16 @@ import type { QuizStore } from "../quiz-store.js";
 import type { QuizCard, QuizLog } from "../quiz-types.js";
 
 const allowedResponses: QuizLog["response"][] = [
+  "start",
   "know",
   "dont_know",
   "view_detail",
+  "view_media",
   "helpful",
   "not_helpful",
+  "complete",
+  "open_meme",
+  "open_service",
 ];
 
 export function registerQuizRoutes(
@@ -75,7 +80,10 @@ export function registerQuizRoutes(
       body.cardId.length < 1 ||
       body.cardId.length > 120 ||
       !["minor", "origin"].includes(body.cardType ?? "") ||
-      !allowedResponses.includes(body.response as QuizLog["response"])
+      !allowedResponses.includes(body.response as QuizLog["response"]) ||
+      (body.runId !== undefined && (typeof body.runId !== "string" || body.runId.length < 8 || body.runId.length > 120)) ||
+      (body.step !== undefined && (typeof body.step !== "number" || !Number.isInteger(body.step) || body.step < 0 || body.step > 5)) ||
+      (body.destination !== undefined && (typeof body.destination !== "string" || body.destination.length > 500))
     ) {
       return reply.code(400).send({ error: "잘못된 데이터 형식입니다." });
     }
@@ -86,6 +94,9 @@ export function registerQuizRoutes(
       cardId: body.cardId,
       cardType: body.cardType as QuizLog["cardType"],
       response: body.response as QuizLog["response"],
+      runId: body.runId,
+      step: body.step,
+      destination: body.destination,
       timestamp: new Date().toISOString(),
     });
     return { success: true };
@@ -97,13 +108,16 @@ export function registerQuizRoutes(
     const detailByParticipantCard = new Map<string, QuizLog>();
     const feedbackByParticipantCard = new Map<string, QuizLog>();
     const participants = new Set<string>();
+    const cardStats = new Map<string, { know: number; dont_know: number; total: number }>();
+    const runs = new Map<string, QuizLog[]>();
 
     for (const log of logs) {
       participants.add(log.sessionId);
+      if (log.runId) runs.set(log.runId, [...(runs.get(log.runId) ?? []), log]);
       const key = `${log.sessionId}:${log.cardId}`;
       if (log.response === "know" || log.response === "dont_know") recognitionByParticipantCard.set(key, log);
-      else if (log.response === "view_detail") detailByParticipantCard.set(key, log);
-      else feedbackByParticipantCard.set(key, log);
+      else if (log.response === "view_detail" || log.response === "view_media") detailByParticipantCard.set(key, log);
+      else if (log.response === "helpful" || log.response === "not_helpful") feedbackByParticipantCard.set(key, log);
     }
 
     const byType = {
@@ -113,13 +127,18 @@ export function registerQuizRoutes(
 
     for (const log of recognitionByParticipantCard.values()) {
       const stats = byType[log.cardType];
+      const card = cardStats.get(log.cardId) ?? { know: 0, dont_know: 0, total: 0 };
       if (log.response === "know") {
         stats.know += 1;
         stats.total += 1;
+        card.know += 1;
       } else if (log.response === "dont_know") {
         stats.dont_know += 1;
         stats.total += 1;
+        card.dont_know += 1;
       }
+      card.total += 1;
+      cardStats.set(log.cardId, card);
     }
     for (const log of detailByParticipantCard.values()) byType[log.cardType].view_detail += 1;
     for (const log of feedbackByParticipantCard.values()) {
@@ -134,6 +153,20 @@ export function registerQuizRoutes(
     }
 
     reply.header("Cache-Control", "no-store");
-    return { totalLogs: logs.length, uniqueParticipants: participants.size, stats: byType };
+    const funnel = { started: 0, reached: [0, 0, 0, 0, 0], completed: 0, viewedMedia: 0, openedMeme: 0, openedService: 0, destinations: {} as Record<string, number> };
+    for (const entries of runs.values()) {
+      if (entries.some((log) => log.response === "start")) funnel.started += 1;
+      for (let step = 1; step <= 5; step += 1) {
+        if (entries.some((log) => (log.response === "know" || log.response === "dont_know") && log.step === step)) funnel.reached[step - 1] += 1;
+      }
+      if (entries.some((log) => log.response === "complete")) funnel.completed += 1;
+      if (entries.some((log) => log.response === "view_media")) funnel.viewedMedia += 1;
+      if (entries.some((log) => log.response === "open_meme")) funnel.openedMeme += 1;
+      if (entries.some((log) => log.response === "open_service")) funnel.openedService += 1;
+      for (const log of entries.filter((entry) => (entry.response === "view_media" || entry.response === "open_meme" || entry.response === "open_service") && entry.destination)) {
+        funnel.destinations[log.destination!] = (funnel.destinations[log.destination!] ?? 0) + 1;
+      }
+    }
+    return { totalLogs: logs.length, uniqueParticipants: participants.size, stats: byType, perCard: Object.fromEntries(cardStats), funnel };
   });
 }

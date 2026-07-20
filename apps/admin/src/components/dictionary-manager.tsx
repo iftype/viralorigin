@@ -112,6 +112,14 @@ const sourceLines = (value: FormDataEntryValue | null, slug: string): SourceLink
     return url ? [{ id: `${slug}-source-${index + 1}`, title: title || "관련 커뮤니티 링크", url }] : [];
   });
 
+const platformForUrl = (url: string): Video["platform"] => url.includes("youtu") ? "youtube" : url.includes("tiktok.com") ? "tiktok" : url.includes("instagram.com") ? "instagram" : url.includes("x.com") || url.includes("twitter.com") ? "x" : "unknown";
+const usageLines = (value: FormDataEntryValue | null, slug: string, existing: Video[]): Video[] => String(value ?? "").split("\n").map((line) => line.trim()).filter(Boolean).flatMap((line, index) => {
+  const [title, url, thumbnailUrl] = line.split("|").map((part) => part.trim());
+  if (!url) return [];
+  const previous = existing.find((video) => video.url === url);
+  return [{ ...previous, id: previous?.id ?? `${slug}-usage-${index + 1}`, platform: platformForUrl(url), title: title || "사용 자료", url, thumbnailUrl: thumbnailUrl || previous?.thumbnailUrl }];
+}).slice(0, 3);
+
 export function DictionaryManager({
   items,
   categories,
@@ -223,7 +231,7 @@ export function DictionaryManager({
         lastReviewedAt: new Date().toISOString().slice(0, 10),
       },
       timeline: [...firstTimeline, ...(base?.timeline.slice(1) ?? [])],
-      trendingVideos: base?.trendingVideos ?? [],
+      trendingVideos: usageLines(form.get("usageMaterials"), slug, base?.trendingVideos ?? []),
       relatedVideos: base?.relatedVideos ?? [],
       relatedMemeIds: form.getAll("relatedMemeIds").map(String).filter((id) => id !== (base?.id ?? slug)),
       sourceLinks: sourceLines(form.get("sourceLinks"), slug),
@@ -413,6 +421,7 @@ export function DictionaryManager({
             <Field label="연결·파생 밈" wide><div className="grid max-h-52 gap-2 overflow-y-auto rounded-2xl bg-[#f7f7f8] p-3 sm:grid-cols-2">{items.filter((item) => item.id !== editing?.id).map((item) => <label className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-sm font-bold" key={item.id}><input className="size-4 accent-black" defaultChecked={editing?.relatedMemeIds?.includes(item.id)} name="relatedMemeIds" type="checkbox" value={item.id} /><span className="min-w-0 truncate">{item.title}</span></label>)}{items.filter((item) => item.id !== editing?.id).length === 0 && <p className="text-xs font-bold text-black/35">연결할 다른 밈이 없습니다.</p>}</div></Field>
             <Field label="한 줄 설명 · 선택" wide><textarea name="summary" placeholder="비워도 저장할 수 있으며 나중에 제안이나 AI 초안으로 보완할 수 있습니다." defaultValue={editing?.summary} /></Field>
             <Field label="관련 커뮤니티 링크 · 한 줄에 하나" wide><textarea name="sourceLinks" placeholder={'링크 제목 | https://example.com/post\nhttps://example.com/another'} defaultValue={(editing?.sourceLinks ?? []).map((link) => `${link.title} | ${link.url}`).join("\n")} /></Field>
+            <Field label="사용 영상·자료 TOP 3 · 제목 | 링크 | 썸네일 URL" wide><textarea name="usageMaterials" placeholder={'대표 사용 영상 | https://youtube.com/...\n커뮤니티 게시글 | https://example.com/post | https://example.com/screenshot.jpg'} defaultValue={(editing?.trendingVideos ?? []).slice(0, 3).map((video) => `${video.title} | ${video.url}${video.thumbnailUrl ? ` | ${video.thumbnailUrl}` : ""}`).join("\n")} /></Field>
             <Field label="썸네일 URL · 선택" wide><input name="thumbnailUrl" type="url" placeholder="비우면 YouTube 또는 링크 메타데이터 후보를 사용합니다" defaultValue={editing?.thumbnailUrl} /></Field>
             <Field label="포인트 색상"><input name="accent" type="color" defaultValue={editing?.accent ?? "#fe2c55"} /></Field>
             <Field label="원본 판단"><select name="originStatus" defaultValue={editing?.origin.status ?? "needs-review"}><option value="verified">출처 확인</option><option value="likely">유력</option><option value="needs-review">검토 필요</option></select></Field>
