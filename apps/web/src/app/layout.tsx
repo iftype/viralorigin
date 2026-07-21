@@ -26,7 +26,6 @@ export default function RootLayout({
       <body>
         <SiteHeader />
         <main>{children}</main>
-        <SiteFooter />
         <Analytics />
         <ClarityConsent />
       </body>

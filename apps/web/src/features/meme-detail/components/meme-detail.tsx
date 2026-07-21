@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/layout/site-footer";
 import { CommentSection } from "@/features/contributions/components/comment-section";
 import type { Meme } from "@/types/meme";
 
@@ -20,6 +21,7 @@ export function MemeDetail({ meme, otherMemes }: { meme: Meme; otherMemes: Meme[
       <CommentSection memeId={meme.id} memeTitle={meme.title} />
       <RelatedMemesSection meme={meme} memes={otherMemes} />
       <MemeRequestCta />
+      <SiteFooter forceShow />
     </article>
   );
 }

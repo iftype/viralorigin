@@ -18,6 +18,7 @@ import {
   Search,
   Tag as TagIcon,
   Video,
+  BookOpenText,
 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { Field } from "@origin/ui";
@@ -163,14 +164,21 @@ export function DictionaryManager({
       thumbnailUrl: String(form.get("thumbnailUrl") ?? "").trim() || undefined,
     };
 
-    const evidence = [
-      {
-        title: String(form.get("evidenceTitle") ?? "").trim() || "확인 근거",
-        detail: String(form.get("evidenceDetail") ?? "").trim(),
-        url: sourceUrl || undefined,
-      },
-      ...(base?.origin?.evidence?.slice(1) ?? []),
-    ];
+    let evidence = base?.origin?.evidence ?? [];
+    const evidenceJson = String(form.get("evidenceJson") ?? "").trim();
+    if (evidenceJson) {
+      try {
+        evidence = JSON.parse(evidenceJson);
+      } catch {}
+    }
+
+    let trendingVideos = base?.trendingVideos ?? [];
+    const trendingJson = String(form.get("trendingVideosJson") ?? "").trim();
+    if (trendingJson) {
+      try {
+        trendingVideos = JSON.parse(trendingJson);
+      } catch {}
+    }
 
     const timeline = [
       {
@@ -207,7 +215,7 @@ export function DictionaryManager({
         lastReviewedAt: new Date().toISOString().slice(0, 10),
       },
       timeline,
-      trendingVideos: base?.trendingVideos ?? [],
+      trendingVideos,
       relatedVideos: base?.relatedVideos ?? [],
       lifecycle: {
         originYear: Number(form.get("originYear")) || undefined,
@@ -768,6 +776,79 @@ function MemeEntryForm({
   const [tags, setTags] = useState<string[]>(editing?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [originUrl, setOriginUrl] = useState(editing?.origin?.video?.url ?? "");
+  const [originTitle, setOriginTitle] = useState(editing?.origin?.video?.title ?? "");
+  const [originCreator, setOriginCreator] = useState(editing?.origin?.video?.creator ?? "");
+  const [fetchingMeta, setFetchingMeta] = useState(false);
+
+  const [trendingVideos, setTrendingVideos] = useState<
+    Array<{ platform: AdminMeme["origin"]["video"]["platform"]; url: string; title: string; creator: string }>
+  >(
+    (editing?.trendingVideos ?? []).map((v) => ({
+      platform: v.platform ?? "youtube",
+      url: v.url ?? "",
+      title: v.title ?? "",
+      creator: v.creator ?? "",
+    }))
+  );
+
+  const [evidenceLinks, setEvidenceLinks] = useState<
+    Array<{ title: string; detail: string; url: string }>
+  >(
+    (editing?.origin?.evidence ?? []).map((e) => ({
+      title: e.title ?? "",
+      detail: e.detail ?? "",
+      url: e.url ?? "",
+    }))
+  );
+
+  const handleOriginUrlChange = async (url: string) => {
+    setOriginUrl(url);
+    const id = getYouTubeId(url);
+    if (id) {
+      setFetchingMeta(true);
+      try {
+        const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`);
+        if (res.ok) {
+          const data = (await res.json()) as { title?: string; author_name?: string };
+          if (data.title) setOriginTitle(data.title);
+          if (data.author_name) setOriginCreator(data.author_name);
+        }
+      } catch {}
+      finally {
+        setFetchingMeta(false);
+      }
+    }
+  };
+
+  const addTrendingVideo = () => {
+    if (trendingVideos.length < 3) {
+      setTrendingVideos([...trendingVideos, { platform: "youtube", url: "", title: "", creator: "" }]);
+    }
+  };
+
+  const updateTrendingVideo = (index: number, key: string, val: string) => {
+    setTrendingVideos((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [key]: val } : item))
+    );
+  };
+
+  const removeTrendingVideo = (index: number) => {
+    setTrendingVideos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addEvidenceLink = () => {
+    setEvidenceLinks([...evidenceLinks, { title: "출처 및 관련 근거", detail: "", url: "" }]);
+  };
+
+  const updateEvidenceLink = (index: number, key: string, val: string) => {
+    setEvidenceLinks((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [key]: val } : item))
+    );
+  };
+
+  const removeEvidenceLink = (index: number) => {
+    setEvidenceLinks((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const addTag = () => {
     const trimmed = tagInput.trim().replace(/^#/, "");
@@ -816,6 +897,9 @@ function MemeEntryForm({
       key={editing?.id ?? "new"}
       onSubmit={onSave}
     >
+      <input type="hidden" name="trendingVideosJson" value={JSON.stringify(trendingVideos)} />
+      <input type="hidden" name="evidenceJson" value={JSON.stringify(evidenceLinks)} />
+
       <div className="flex items-center justify-between border-b border-zinc-100 pb-3.5">
         <div className="flex items-center gap-3">
           <div>
@@ -921,7 +1005,6 @@ function MemeEntryForm({
             </div>
           </div>
 
-          {/* 선택된 카테고리 칩 목록 */}
           <div className="flex flex-wrap gap-1.5 mb-2 min-h-[28px]">
             {selectedCategoryIds.map((id) => {
               const cat = categories.find((c) => c.id === id);
@@ -947,7 +1030,6 @@ function MemeEntryForm({
             )}
           </div>
 
-          {/* 카테고리 후보 콤팩트 리스트 */}
           <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto border-t border-zinc-200/60 pt-2">
             {filteredCategories.map((category) => {
               const isSelected = selectedCategoryIds.includes(category.id);
@@ -966,7 +1048,7 @@ function MemeEntryForm({
           </div>
         </div>
 
-        {/* 3. 태그 인터랙티브 칩 개별 추가/삭제 UI */}
+        {/* 2. 태그 인터랙티브 칩 개별 추가/삭제 UI */}
         <div className="col-span-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-3.5">
           <input type="hidden" name="tags" value={tags.join(",")} />
           <span className="text-xs font-bold text-zinc-700 block mb-2">태그 관리 (Tag Manager)</span>
@@ -1033,8 +1115,14 @@ function MemeEntryForm({
           />
         </Field>
 
-        <div className="col-span-full my-1 border-t border-zinc-100 pt-3">
+        {/* 3. 원본 정보 & 자동 정보 추출 */}
+        <div className="col-span-full my-1 border-t border-zinc-100 pt-3 flex items-center justify-between">
           <p className="text-xs font-black text-zinc-400 uppercase tracking-wider">Origin & Video Meta</p>
+          {fetchingMeta && (
+            <span className="inline-flex items-center gap-1 text-[0.68rem] font-bold text-rose-600 animate-pulse">
+              <LoaderCircle className="size-3 animate-spin" /> 유튜브 정보 자동으로 가져오는 중...
+            </span>
+          )}
         </div>
 
         <Field label="원본 검증 상태">
@@ -1072,19 +1160,19 @@ function MemeEntryForm({
             <option value="unknown">기타</option>
           </select>
         </Field>
-        <Field label="원본 영상 URL">
+        <Field label="원본 영상 URL (유튜브 링크 입력 시 제목·업로더 자동 완성)">
           <input
             className="w-full rounded-xl border border-zinc-200 px-3.5 py-2 text-xs outline-none focus:border-zinc-900"
             name="originUrl"
             required
             type="url"
             value={originUrl}
-            onChange={(e) => setOriginUrl(e.target.value)}
+            onChange={(e) => handleOriginUrlChange(e.target.value)}
             placeholder="https://www.youtube.com/watch?v=..."
           />
         </Field>
 
-        {/* 2. 원본 영상 실시간 콤팩트 미리보기 (1/4 크기: 160px) */}
+        {/* 원본 영상 실시간 콤팩트 미리보기 */}
         {originUrl && (
           <div className="col-span-full rounded-xl border border-zinc-200 bg-zinc-900 p-2.5 text-white">
             <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-rose-400">
@@ -1118,24 +1206,26 @@ function MemeEntryForm({
           </div>
         )}
 
-        <Field label="영상 제목">
+        <Field label="영상 제목 (유튜브 URL 자동 채우기)">
           <input
             className="w-full rounded-xl border border-zinc-200 px-3.5 py-2 text-xs outline-none focus:border-zinc-900"
             name="originTitle"
             required
-            defaultValue={editing?.origin?.video?.title}
+            value={originTitle}
+            onChange={(e) => setOriginTitle(e.target.value)}
             placeholder="영상 제목"
           />
         </Field>
-        <Field label="업로더 (Creator)">
+        <Field label="업로더 / 크리에이터 (유튜브 채널명 자동 채우기)">
           <input
             className="w-full rounded-xl border border-zinc-200 px-3.5 py-2 text-xs outline-none focus:border-zinc-900"
             name="originCreator"
-            defaultValue={editing?.origin?.video?.creator}
+            value={originCreator}
+            onChange={(e) => setOriginCreator(e.target.value)}
             placeholder="@ryo.cute"
           />
         </Field>
-        <Field label="원본 요약 설명" wide>
+        <Field label="원본 뜻과 유래 요약 설명" wide>
           <textarea
             className="w-full rounded-xl border border-zinc-200 p-3 text-xs leading-relaxed outline-none focus:border-zinc-900"
             name="originSummary"
@@ -1145,6 +1235,158 @@ function MemeEntryForm({
             placeholder="원본 영상 유래 및 확산 개요"
           />
         </Field>
+
+        {/* 4. 이 밈을 사용한 영상자료 TOP 3 (trendingVideos) */}
+        <div className="col-span-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-3.5 mt-2">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <span className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
+                <Video className="size-3.5 text-rose-600" />
+                이 밈을 사용한 대표 영상자료 TOP 3 (Trending Videos)
+              </span>
+              <p className="text-[0.68rem] text-zinc-400">피드 및 상세 페이지에 노출될 활용 영상 최대 3개까지 지정</p>
+            </div>
+            {trendingVideos.length < 3 && (
+              <button
+                type="button"
+                onClick={addTrendingVideo}
+                className="inline-flex items-center gap-1 rounded-lg bg-zinc-900 px-2.5 py-1 text-xs font-bold text-white hover:bg-zinc-800"
+              >
+                + 영상 추가 ({trendingVideos.length}/3)
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {trendingVideos.map((video, idx) => (
+              <div key={idx} className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm relative">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[0.65rem] font-black uppercase text-rose-600 bg-rose-50 px-2 py-0.5 rounded">
+                    TOP {idx + 1}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeTrendingVideo(idx)}
+                    className="text-zinc-400 hover:text-rose-600 text-xs font-bold flex items-center gap-0.5"
+                  >
+                    <X className="size-3" /> 삭제
+                  </button>
+                </div>
+                <div className="grid gap-2 text-xs sm:grid-cols-2">
+                  <div>
+                    <label className="block font-bold text-zinc-500 text-[0.65rem] mb-1">플랫폼</label>
+                    <select
+                      className="w-full rounded-lg border border-zinc-200 p-1.5 outline-none font-bold"
+                      value={video.platform}
+                      onChange={(e) => updateTrendingVideo(idx, "platform", e.target.value)}
+                    >
+                      <option value="youtube">YouTube</option>
+                      <option value="tiktok">TikTok</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="x">X</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-zinc-500 text-[0.65rem] mb-1">영상 URL</label>
+                    <input
+                      className="w-full rounded-lg border border-zinc-200 p-1.5 outline-none"
+                      placeholder="https://..."
+                      value={video.url}
+                      onChange={(e) => updateTrendingVideo(idx, "url", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-zinc-500 text-[0.65rem] mb-1">영상 제목</label>
+                    <input
+                      className="w-full rounded-lg border border-zinc-200 p-1.5 outline-none font-medium"
+                      placeholder="제목"
+                      value={video.title}
+                      onChange={(e) => updateTrendingVideo(idx, "title", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-zinc-500 text-[0.65rem] mb-1">업로더 / 제작자</label>
+                    <input
+                      className="w-full rounded-lg border border-zinc-200 p-1.5 outline-none font-medium"
+                      placeholder="@uploader"
+                      value={video.creator}
+                      onChange={(e) => updateTrendingVideo(idx, "creator", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            {trendingVideos.length === 0 && (
+              <p className="text-xs text-zinc-400 py-1 font-medium">등록된 대표 활용 영상이 없습니다.</p>
+            )}
+          </div>
+        </div>
+
+        {/* 5. 뜻과 유래를 증명하는 출처/근거 링크 지정 (origin.evidence) */}
+        <div className="col-span-full rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-3.5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <span className="text-xs font-bold text-zinc-800 flex items-center gap-1.5">
+                <BookOpenText className="size-3.5 text-zinc-700" />
+                뜻과 유래 출처/근거 링크 (Origin Evidence Links)
+              </span>
+              <p className="text-[0.68rem] text-zinc-400">사전 상세 페이지에 검증 근거로 표시될 관련 문서/기사 링크</p>
+            </div>
+            <button
+              type="button"
+              onClick={addEvidenceLink}
+              className="inline-flex items-center gap-1 rounded-lg bg-zinc-900 px-2.5 py-1 text-xs font-bold text-white hover:bg-zinc-800"
+            >
+              + 근거 링크 추가
+            </button>
+          </div>
+
+          <div className="space-y-2.5">
+            {evidenceLinks.map((link, idx) => (
+              <div key={idx} className="rounded-lg border border-zinc-200 bg-white p-2.5 shadow-sm">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[0.65rem] font-bold text-zinc-500">근거 #{idx + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeEvidenceLink(idx)}
+                    className="text-zinc-400 hover:text-rose-600 text-xs font-bold flex items-center gap-0.5"
+                  >
+                    <X className="size-3" /> 삭제
+                  </button>
+                </div>
+                <div className="grid gap-2 text-xs sm:grid-cols-3">
+                  <div>
+                    <input
+                      className="w-full rounded-lg border border-zinc-200 p-1.5 outline-none font-bold"
+                      placeholder="근거 제목 (예: 원작자 인스타그램 게시글)"
+                      value={link.title}
+                      onChange={(e) => updateEvidenceLink(idx, "title", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <input
+                      className="w-full rounded-lg border border-zinc-200 p-1.5 outline-none"
+                      placeholder="상세설명 (선택)"
+                      value={link.detail}
+                      onChange={(e) => updateEvidenceLink(idx, "detail", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <input
+                      className="w-full rounded-lg border border-zinc-200 p-1.5 outline-none font-mono text-[0.68rem]"
+                      placeholder="URL (https://...)"
+                      value={link.url}
+                      onChange={(e) => updateEvidenceLink(idx, "url", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            {evidenceLinks.length === 0 && (
+              <p className="text-xs text-zinc-400 py-1 font-medium">등록된 출처 근거 링크가 없습니다.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="mt-5 flex justify-end gap-2 border-t border-zinc-100 pt-4">

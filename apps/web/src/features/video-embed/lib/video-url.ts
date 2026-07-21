@@ -45,7 +45,7 @@ export function getInstagramEmbedUrl(url: string) {
       return null;
     }
 
-    return `https://www.instagram.com/${route}/${shortcode}/embed/`;
+    return `https://www.instagram.com/${route}/${shortcode}/embed/captioned/`;
   } catch {
     return null;
   }
