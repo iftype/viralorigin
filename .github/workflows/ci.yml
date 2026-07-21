@@ -95,7 +95,7 @@ jobs:
             "cd '$ORACLE_DEPLOY_PATH' && corepack enable && pnpm install --prod --frozen-lockfile --filter @origin/api... && systemctl --user restart origin-api"
 
       - name: Configure admin SSH
-        if: github.event_name == 'push' && vars.ADMIN_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push'
         env:
           ADMIN_ORACLE_HOST: ${{ secrets.ADMIN_ORACLE_HOST }}
           ADMIN_ORACLE_SSH_KEY: ${{ secrets.ADMIN_ORACLE_SSH_KEY }}
@@ -109,7 +109,7 @@ jobs:
           ssh-keyscan -p "${ADMIN_ORACLE_SSH_PORT:-22}" "$ADMIN_ORACLE_HOST" >> "$HOME/.ssh/known_hosts"
 
       - name: Upload develop admin to iftype.store
-        if: github.event_name == 'push' && vars.ADMIN_DEPLOY_ENABLED == 'true'
+        if: github.event_name == 'push'
         env:
           ADMIN_ORACLE_DEPLOY_PATH: ${{ secrets.ADMIN_ORACLE_DEPLOY_PATH }}
           ADMIN_ORACLE_HOST: ${{ secrets.ADMIN_ORACLE_HOST }}

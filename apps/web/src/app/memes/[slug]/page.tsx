@@ -14,8 +14,6 @@ export function generateStaticParams() {
   const params = sampleMemes.map((meme) => ({
     slug: meme.slug.toLowerCase(),
   }));
-  // 운영 canonical URL은 vercel.json이 /meme shell로 rewrite한다.
-  // sample fallback이 비어 있어도 static export가 동적 route 계약을 유지하도록 shell 하나를 만든다.
   return params.length ? params : [{ slug: "dictionary-shell" }];
 }
 

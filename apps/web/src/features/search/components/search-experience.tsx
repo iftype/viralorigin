@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { Badge, EmptyState, buttonClassName } from "@origin/ui";
+import { Badge, buttonClassName } from "@origin/ui";
 import { sampleMemes } from "@/data/sample-memes";
 import type { Meme, MemeCategory } from "@/types/meme";
 
@@ -153,13 +153,13 @@ export function SearchExperience() {
 
       <section className="mt-4" aria-busy={isLoading} aria-live="polite">
         {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div className="h-[29rem] animate-pulse rounded-[var(--vo-radius-xl)] bg-white" key={index} />
+          <div className="grid gap-2.5 sm:gap-3.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <div className="h-44 animate-pulse rounded-2xl bg-zinc-100" key={index} />
             ))}
           </div>
         ) : visibleMemes.length ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-2.5 sm:gap-3.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {visibleMemes.map((meme, index) => (
               <MemeCard
                 categoryLabel={
@@ -168,7 +168,7 @@ export function SearchExperience() {
                 }
                 key={meme.id}
                 meme={meme}
-                priority={index === 0}
+                priority={index < 4}
               />
             ))}
           </div>
@@ -202,6 +202,27 @@ export function SearchExperience() {
           </Link>
         </aside>
       )}
+    </div>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-[var(--vo-radius-xl)] border border-dashed border-black/10 bg-white p-12 text-center">
+      <span className="text-4xl">{icon}</span>
+      <h3 className="mt-3 text-lg font-black">{title}</h3>
+      <p className="mt-1 text-xs text-black/50">{description}</p>
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }

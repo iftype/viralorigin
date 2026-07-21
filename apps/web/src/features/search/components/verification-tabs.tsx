@@ -18,23 +18,27 @@ export function VerificationTabs({
   onChange: (filter: VerificationFilter) => void;
 }) {
   return (
-    <div aria-label="원본 확인 상태" className="flex flex-wrap gap-2" role="tablist">
+    <div aria-label="원본 확인 상태" className="w-full flex items-center p-1 rounded-2xl bg-zinc-100/90 border border-zinc-200/60 shadow-inner gap-1" role="tablist">
       {tabs.map((tab) => {
         const selected = tab.id === active;
         return (
           <button
             aria-selected={selected}
             className={cn(
-              "inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-black transition",
-              selected ? "bg-[#fe2c55] text-white" : "bg-white text-black/45 hover:text-black",
+              "flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs transition-all duration-200 cursor-pointer",
+              selected
+                ? "bg-black text-white shadow-md font-black"
+                : "text-zinc-500 hover:text-zinc-900 font-bold hover:bg-black/5",
             )}
             key={tab.id}
             onClick={() => onChange(tab.id)}
             role="tab"
             type="button"
           >
-            {tab.label}
-            <Badge className={cn("px-1.5 py-0.5 text-[0.62rem]", selected ? "bg-white/20 text-white" : "bg-black/5")}>{counts[tab.id]}</Badge>
+            <span>{tab.label}</span>
+            <Badge className={cn("px-1.5 py-0.2 text-[0.6rem] font-bold rounded-md", selected ? "bg-white/20 text-white" : "bg-black/8 text-zinc-600")}>
+              {counts[tab.id]}
+            </Badge>
           </button>
         );
       })}
