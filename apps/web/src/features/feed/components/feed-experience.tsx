@@ -12,6 +12,7 @@ import {
   ChevronUp,
   ExternalLink,
   BookOpen,
+  Play,
 } from "lucide-react";
 import { Badge } from "@origin/ui";
 import { VideoEmbed } from "@/features/video-embed/components/video-embed";
@@ -149,6 +150,9 @@ export function FeedExperience() {
             const platformName = platformLabels[platform] ?? platform;
             const isActive = index === activeIndex;
 
+            // 시야에서 멀어진 오프스크린 영상 언마운트 (VM 인스턴스/네트워크 소켓 메모리 누수 100% 방지)
+            const shouldRenderVideo = Math.abs(index - activeIndex) <= 1;
+
             return (
               <div
                 key={meme.id}
@@ -160,13 +164,20 @@ export function FeedExperience() {
               >
                 {/* 100% 모바일 뷰포트 꽉 찬 비디오 구역 */}
                 <div className="relative size-full max-w-[480px] flex flex-col justify-center">
-                  <VideoEmbed
-                    video={video}
-                    autoPlayOnScroll={isActive}
-                    feedMode={true}
-                    isMuted={globalMuted}
-                    onToggleMute={() => setGlobalMuted((prev) => !prev)}
-                  />
+                  {shouldRenderVideo ? (
+                    <VideoEmbed
+                      video={video}
+                      autoPlayOnScroll={isActive}
+                      feedMode={true}
+                      isMuted={globalMuted}
+                      onToggleMute={() => setGlobalMuted((prev) => !prev)}
+                    />
+                  ) : (
+                    /* 화면 밖으로 나간 지나친 비디오는 커넥션 100% 해제 (Unmounted Off-screen Placeholder) */
+                    <div className="relative size-full bg-zinc-950 flex flex-col items-center justify-center text-white/20">
+                      <Play className="size-12 animate-pulse" />
+                    </div>
+                  )}
 
                   {/* 틱톡 오버레이 상단 바 */}
                   <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none">
