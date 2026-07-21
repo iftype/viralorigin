@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { FeedExperience } from "@/features/feed/components/feed-experience";
 import { SearchExperience } from "@/features/search/components/search-experience";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 function SwipeFeedDictionaryContent({ initialTab = "feed" }: { initialTab?: "feed" | "dictionary" }) {
   const pathname = usePathname();
@@ -131,6 +132,7 @@ function SwipeFeedDictionaryContent({ initialTab = "feed" }: { initialTab?: "fee
           <div className="py-3 px-2 sm:px-4">
             <SearchExperience />
           </div>
+          <SiteFooter forceShow />
         </div>
       </div>
     </div>

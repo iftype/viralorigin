@@ -43,6 +43,11 @@ export class MemeStore {
         categoryIds: legacyCategoryIds(item),
         relatedMemeIds: item.relatedMemeIds ?? [],
         sourceLinks: item.sourceLinks ?? [],
+        trendingVideos: item.trendingVideos ?? [],
+        relatedVideos: item.relatedVideos ?? [],
+        timeline: item.timeline ?? [],
+        tags: item.tags ?? [],
+        aliases: item.aliases ?? [],
       }))
       .filter((item) => includeUnpublished || item.publicationStatus === "published")
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -61,6 +66,11 @@ export class MemeStore {
           categoryIds: legacyCategoryIds(item),
           relatedMemeIds: item.relatedMemeIds ?? [],
           sourceLinks: item.sourceLinks ?? [],
+          trendingVideos: item.trendingVideos ?? [],
+          relatedVideos: item.relatedVideos ?? [],
+          timeline: item.timeline ?? [],
+          tags: item.tags ?? [],
+          aliases: item.aliases ?? [],
         }
       : null;
   }

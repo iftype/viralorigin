@@ -54,12 +54,13 @@ jobs:
         shell: bash
         run: |
           rm -rf .deploy
-          mkdir -p .deploy/apps/web .deploy/apps/api .deploy/apps/admin/out
+          mkdir -p .deploy/apps/web .deploy/apps/api .deploy/apps/admin/build_tmp
           cp -R apps/web/out .deploy/apps/web/out
-          cp -R apps/admin/out/* .deploy/apps/admin/out/
-          rm -rf .deploy/apps/admin/out/viral
+          cp -R apps/admin/out/* .deploy/apps/admin/build_tmp/
           mkdir -p .deploy/apps/admin/out/viral
-          cp -R apps/admin/out/* .deploy/apps/admin/out/viral/
+          cp -R .deploy/apps/admin/build_tmp/* .deploy/apps/admin/out/
+          cp -R .deploy/apps/admin/build_tmp/* .deploy/apps/admin/out/viral/
+          rm -rf .deploy/apps/admin/build_tmp
           cp -R apps/api/dist .deploy/apps/api/dist
           cp apps/api/package.json .deploy/apps/api/package.json
           cp package.json pnpm-lock.yaml pnpm-workspace.yaml .deploy/
