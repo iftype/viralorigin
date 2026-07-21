@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Archive,
   Check,
   ExternalLink,
   FilePenLine,
@@ -11,10 +10,8 @@ import {
   LoaderCircle,
   Plus,
   Save,
-  Sparkles,
   Trash2,
   X,
-  Play,
 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { Field } from "@origin/ui";
@@ -299,7 +296,7 @@ export function DictionaryManager({
     try {
       const selectedMemes = items.filter((item) => selectedIds.has(item.id));
       for (const meme of selectedMemes) {
-        let updated = { ...meme };
+        const updated = { ...meme };
         if (bulkAction === "publish") updated.publicationStatus = "published";
         else if (bulkAction === "draft") updated.publicationStatus = "draft";
         else if (bulkAction === "archive") updated.publicationStatus = "archived";
