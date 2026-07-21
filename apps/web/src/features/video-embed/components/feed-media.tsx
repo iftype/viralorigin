@@ -53,6 +53,7 @@ export function FeedMedia({ posterUrl, priority = false, video }: { posterUrl?: 
             allowFullScreen
             className={`absolute inset-0 size-full border-0 ${isInstagram && !instagramInteractive ? "pointer-events-none" : ""}`}
             loading="lazy"
+            referrerPolicy="no-referrer"
             scrolling="no"
             src={embedUrl}
             title={video?.title ?? "밈 영상"}
@@ -74,14 +75,17 @@ export function FeedMedia({ posterUrl, priority = false, video }: { posterUrl?: 
         {isInstagram && instagramInteractive && (
           <>
             <button className="absolute right-2 top-2 z-20 flex items-center gap-1 rounded-full bg-black/75 px-3 py-2 text-[0.65rem] font-black text-white shadow-lg backdrop-blur-sm" onClick={() => setInstagramInteractive(false)} type="button"><ScrollText className="size-3.5" />피드 스크롤</button>
+            <a href={video?.url} target="_blank" rel="noreferrer" className="absolute left-2 top-2 z-20 flex items-center gap-1 rounded-full bg-black/75 px-3 py-2 text-[0.65rem] font-black text-white shadow-lg backdrop-blur-sm hover:bg-black">
+              인스타그램에서 열기 <ExternalLink className="size-3" />
+            </a>
             <div aria-hidden="true" className="absolute inset-y-0 left-0 z-10 w-3 touch-pan-y" />
             <div aria-hidden="true" className="absolute inset-y-0 right-0 z-10 w-3 touch-pan-y" />
             <div aria-hidden="true" className="absolute inset-x-0 bottom-0 z-10 h-5 touch-pan-y bg-gradient-to-t from-black/30 to-transparent" />
           </>
         )}
 
-        {!embedUrl && video && (
-          <a className="absolute inset-x-3 bottom-3 z-10 flex items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-xs font-black text-black" href={video.url} rel="noreferrer" target="_blank">원문에서 보기<ExternalLink className="size-3.5" /></a>
+        {(!embedUrl || isInstagram) && video && (
+          <a className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-center gap-1.5 rounded-xl bg-white/90 px-3 py-2 text-xs font-black text-black shadow-md backdrop-blur-sm hover:bg-white" href={video.url} rel="noreferrer" target="_blank">Instagram 원문에서 보기<ExternalLink className="size-3.5" /></a>
         )}
       </div>
     </div>

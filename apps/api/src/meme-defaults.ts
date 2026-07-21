@@ -1069,4 +1069,38 @@ export const defaultMemes: Meme[] = [
     categoryIds: ["category-instagram", "category-community-meme"],
     tags: ["인스타", "커뮤", "상황극", "챌린지"],
   },
+  {
+    id: "scuba-dance",
+    slug: "scuba-dance",
+    title: "스쿠바 댄스",
+    kind: "challenge",
+    aliases: ["스쿠바 댄스 챌린지", "Scuba Dance Challenge"],
+    summary: "스쿠바 다이빙 장비를 차고 신나게 춤추는 인기 유행 숏폼 챌린지.",
+    accent: "#fe2c55",
+    origin: {
+      status: "verified",
+      video: {
+        id: "v-scuba-1",
+        platform: "tiktok",
+        url: "https://www.tiktok.com/@official_nct/video/7637412498311777543",
+        title: "스쿠바 댄스 원본 영상",
+        creator: "scuba_origin",
+        uploadedAt: "2026-07-01",
+      },
+      summary: "스쿠바 댄스 원조 챌린지 영상이 SNS에서 큰 화제를 모았습니다.",
+      evidence: [
+        {
+          title: "첫 바이럴 챌린지 게시물",
+          detail: "스쿠바 다이빙 수트를 착용하고 특유의 경쾌한 댄스를 춘 비디오가 숏폼 전반으로 퍼졌습니다.",
+        },
+      ],
+      lastReviewedAt: "2026-07-20",
+    },
+    timeline: [],
+    trendingVideos: [],
+    relatedVideos: [],
+    lifecycle: { originYear: 2026 },
+    categoryIds: ["category-challenge", "category-tiktok"],
+    tags: ["스쿠바댄스", "챌린지", "틱톡"],
+  },
 ];

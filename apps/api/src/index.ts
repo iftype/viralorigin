@@ -59,6 +59,7 @@ const metadataSuggestionService = new MetadataSuggestionService(
 );
 
 await categoryStore.ensureDefaults();
+await memeStore.ensureDefaults();
 
 await app.register(cors, {
   origin:
