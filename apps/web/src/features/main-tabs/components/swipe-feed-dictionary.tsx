@@ -8,7 +8,7 @@ import { SearchExperience } from "@/features/search/components/search-experience
 export function SwipeFeedDictionary({ initialTab = "feed" }: { initialTab?: "feed" | "dictionary" }) {
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<"feed" | "dictionary">(
-    pathname === "/feed" ? "feed" : initialTab
+    pathname.startsWith("/memes") ? "dictionary" : initialTab
   );
 
   const [dragOffset, setDragOffset] = useState(0);
@@ -19,14 +19,14 @@ export function SwipeFeedDictionary({ initialTab = "feed" }: { initialTab?: "fee
   const touchStartY = useRef<number | null>(null);
   const isHorizontalSwipe = useRef<boolean | null>(null);
 
-  // URL 변경 시 탭 상태 동기화
+  // URL 경로 변경 시 활성 탭 즉시 동기화
   useEffect(() => {
-    if (pathname === "/feed") {
-      setActiveTab("feed");
-    } else if (pathname === "/" && initialTab === "dictionary") {
+    if (pathname.startsWith("/memes")) {
       setActiveTab("dictionary");
+    } else if (pathname === "/feed" || pathname === "/") {
+      setActiveTab("feed");
     }
-  }, [pathname, initialTab]);
+  }, [pathname]);
 
   // 터치 드래그 수평 따라오기 핸들러 (중간 과정 1:1 실시간 보여주기)
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -54,7 +54,6 @@ export function SwipeFeedDictionary({ initialTab = "feed" }: { initialTab?: "fee
 
     // 수평 스와이프 중일 때 손가락 움직임 그대로 실시간 반영 (중간 과정 렌더링)
     if (isHorizontalSwipe.current) {
-      // 피드에서 오른쪽으로 더 당기거나 사전에서 왼쪽으로 더 당기는 경계 바운스 제한
       let clampedDiff = diffX;
       if (activeTab === "feed" && diffX > 0) clampedDiff = diffX * 0.2;
       if (activeTab === "dictionary" && diffX < 0) clampedDiff = diffX * 0.2;
@@ -69,14 +68,13 @@ export function SwipeFeedDictionary({ initialTab = "feed" }: { initialTab?: "fee
 
       if (activeTab === "feed" && dragOffset < -threshold) {
         setActiveTab("dictionary");
-        window.history.replaceState(null, "", "/");
+        window.history.replaceState(null, "", "/memes");
       } else if (activeTab === "dictionary" && dragOffset > threshold) {
         setActiveTab("feed");
-        window.history.replaceState(null, "", "/feed");
+        window.history.replaceState(null, "", "/");
       }
     }
 
-    // 드래그 종료 후 오프셋 초기화
     setDragOffset(0);
     setIsDragging(false);
     touchStartX.current = null;

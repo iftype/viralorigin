@@ -14,8 +14,8 @@ export function SiteHeader() {
   const router = useRouter();
   const [searchExpanded, setSearchExpanded] = useState(false);
 
-  // URL 경로에 맞게 탭 지정 (피드는 /feed, 사전은 / 또는 /memes)
-  const currentTab = pathname === "/feed" ? "feed" : "dictionary";
+  // 접속 첫 화면(/ 및 /feed)은 피드가 기본 활성 탭
+  const currentTab = pathname.startsWith("/memes") ? "dictionary" : "feed";
   const [optimisticTab, setOptimisticTab] = useOptimistic(
     currentTab,
     (_state, newTab: "feed" | "dictionary") => newTab
@@ -51,7 +51,7 @@ export function SiteHeader() {
             <div className="flex items-center gap-0.5 rounded-full bg-black/5 p-1 text-xs font-black shadow-inner">
               <button
                 type="button"
-                onClick={() => handleTabClick("feed", "/feed")}
+                onClick={() => handleTabClick("feed", "/")}
                 className={cn(
                   "rounded-full px-3.5 py-1.5 transition-all duration-200 text-xs cursor-pointer",
                   optimisticTab === "feed"
@@ -63,7 +63,7 @@ export function SiteHeader() {
               </button>
               <button
                 type="button"
-                onClick={() => handleTabClick("dictionary", "/")}
+                onClick={() => handleTabClick("dictionary", "/memes")}
                 className={cn(
                   "rounded-full px-3.5 py-1.5 transition-all duration-200 text-xs cursor-pointer",
                   optimisticTab === "dictionary"

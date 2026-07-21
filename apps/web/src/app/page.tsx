@@ -3,8 +3,8 @@ import { SwipeFeedDictionary } from "@/features/main-tabs/components/swipe-feed-
 
 export default function Home() {
   return (
-    <Suspense fallback={<div className="h-[70vh] w-full bg-white" />}>
-      <SwipeFeedDictionary initialTab="dictionary" />
+    <Suspense fallback={<div className="h-[70vh] w-full bg-black" />}>
+      <SwipeFeedDictionary initialTab="feed" />
     </Suspense>
   );
 }
