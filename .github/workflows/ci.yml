@@ -53,9 +53,10 @@ jobs:
         if: github.event_name == 'push'
         shell: bash
         run: |
-          mkdir -p .deploy/apps/web .deploy/apps/api .deploy/apps/admin
+          mkdir -p .deploy/apps/web .deploy/apps/api .deploy/apps/admin/out/viral
           cp -R apps/web/out .deploy/apps/web/out
-          cp -R apps/admin/out .deploy/apps/admin/out
+          cp -R apps/admin/out/* .deploy/apps/admin/out/
+          cp -R apps/admin/out/* .deploy/apps/admin/out/viral/
           cp -R apps/api/dist .deploy/apps/api/dist
           cp apps/api/package.json .deploy/apps/api/package.json
           cp package.json pnpm-lock.yaml pnpm-workspace.yaml .deploy/

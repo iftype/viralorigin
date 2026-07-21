@@ -789,6 +789,7 @@ function MemeEntryForm({
   };
 
   const getYouTubeId = (url: string) => {
+    if (!url || typeof url !== "string") return null;
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
@@ -796,10 +797,11 @@ function MemeEntryForm({
 
   const ytId = getYouTubeId(originUrl);
 
-  const filteredCategories = categories.filter(
+  const filteredCategories = (categories ?? []).filter(
     (c) =>
-      c.label.toLowerCase().includes(categorySearch.toLowerCase()) ||
-      c.id.toLowerCase().includes(categorySearch.toLowerCase())
+      c &&
+      ((c.label ?? "").toLowerCase().includes(categorySearch.toLowerCase()) ||
+        (c.id ?? "").toLowerCase().includes(categorySearch.toLowerCase()))
   );
 
   return (
