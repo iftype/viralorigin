@@ -83,14 +83,14 @@ export function SiteHeader() {
           </Link>
 
           {/* 화면 상단 정중앙 낙관적 업데이트 토글 스위치 (Suspense 래핑) */}
-          <div className="flex items-center justify-center min-w-0 mx-auto">
+          <div className="flex shrink-0 items-center justify-center min-w-0 mx-auto z-10">
             <Suspense fallback={<div className="h-8 w-24 rounded-full bg-black/5 animate-pulse" />}>
               <HeaderTabToggle />
             </Suspense>
           </div>
 
           {/* 우측 검색창 */}
-          <div className="min-w-0 flex-1 md:col-start-3 md:row-start-1 md:w-full flex justify-end items-center ml-auto">
+          <div className="min-w-0 flex-1 md:col-start-3 md:row-start-1 md:w-full flex justify-end items-center ml-auto overflow-hidden">
             <HeaderSearch
               className="w-auto md:w-full"
               expanded={searchExpanded}

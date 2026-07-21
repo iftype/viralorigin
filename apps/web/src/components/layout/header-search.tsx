@@ -82,7 +82,7 @@ export function HeaderSearch({
         <div
           className={cn(
             "flex min-w-0 items-center gap-1.5 rounded-full border border-black/8 bg-white/90 transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] focus-within:border-black/25 focus-within:bg-white cursor-pointer px-2.5 md:!w-full md:!h-10 md:!px-4 md:!py-2 md:gap-2.5 shadow-sm",
-            expanded ? "w-[220px] h-9" : "w-9 h-9"
+            expanded ? "w-[150px] sm:w-[220px] h-9" : "w-9 h-9"
           )}
           onClick={() => {
             inputRef.current?.focus();

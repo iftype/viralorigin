@@ -67,8 +67,10 @@ function SwipeFeedDictionaryContent({ initialTab = "feed" }: { initialTab?: "fee
       }
     }
 
-    // 수평 스와이프 중일 때 상/하 수직 스크롤을 100% 차단하고 수평 드래그 1:1 반영
-    if (isHorizontalSwipe.current) {
+    // 수평 스와이프 중일 때 상/하 수직 스크롤 차단, 수직 스크롤 중일 때 수평 오프셋 0 고정
+    if (isHorizontalSwipe.current === false) {
+      setDragOffset(0);
+    } else if (isHorizontalSwipe.current === true) {
       if (e.cancelable) {
         e.preventDefault();
       }
