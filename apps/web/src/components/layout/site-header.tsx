@@ -2,7 +2,7 @@
 
 import { MessageCircleMore, Plus } from "lucide-react";
 import Link from "next/link";
-import { useState, useOptimistic, startTransition, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { BrandMark, buttonClassName, cn } from "@origin/ui";
@@ -10,32 +10,40 @@ import { BrandMark, buttonClassName, cn } from "@origin/ui";
 import { HeaderSearch } from "./header-search";
 
 function HeaderTabToggle() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const [currentTab, setCurrentTab] = useState<"feed" | "dictionary">("feed");
 
-  const tabParam = searchParams.get("tab");
-  const currentTab = tabParam === "dictionary" ? "dictionary" : "feed";
+  useEffect(() => {
+    const syncTabFromUrl = () => {
+      if (typeof window === "undefined") return;
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      setCurrentTab(tab === "dictionary" ? "dictionary" : "feed");
+    };
 
-  const [optimisticTab, setOptimisticTab] = useOptimistic(
-    currentTab,
-    (_state, newTab: "feed" | "dictionary") => newTab
-  );
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+    window.addEventListener("tabchange", syncTabFromUrl);
+    return () => {
+      window.removeEventListener("popstate", syncTabFromUrl);
+      window.removeEventListener("tabchange", syncTabFromUrl);
+    };
+  }, []);
 
-  const handleTabClick = (tab: "feed" | "dictionary", href: string) => {
-    startTransition(() => {
-      setOptimisticTab(tab);
-      router.push(href);
-    });
+  const handleTabClick = (tab: "feed" | "dictionary") => {
+    if (typeof window === "undefined") return;
+    const href = tab === "dictionary" ? "/?tab=dictionary" : "/";
+    window.history.pushState(null, "", href);
+    window.dispatchEvent(new Event("tabchange"));
   };
 
   return (
     <div className="flex items-center gap-0.5 rounded-full bg-black/5 p-1 text-xs font-black shadow-inner">
       <button
         type="button"
-        onClick={() => handleTabClick("feed", "/")}
+        onClick={() => handleTabClick("feed")}
         className={cn(
           "rounded-full px-3 py-1.5 sm:px-3.5 transition-all duration-200 text-xs cursor-pointer",
-          optimisticTab === "feed"
+          currentTab === "feed"
             ? "bg-black text-white shadow-md font-black"
             : "text-black/50 hover:text-black"
         )}
@@ -44,10 +52,10 @@ function HeaderTabToggle() {
       </button>
       <button
         type="button"
-        onClick={() => handleTabClick("dictionary", "/?tab=dictionary")}
+        onClick={() => handleTabClick("dictionary")}
         className={cn(
           "rounded-full px-3 py-1.5 sm:px-3.5 transition-all duration-200 text-xs cursor-pointer",
-          optimisticTab === "dictionary"
+          currentTab === "dictionary"
             ? "bg-black text-white shadow-md font-black"
             : "text-black/50 hover:text-black"
         )}

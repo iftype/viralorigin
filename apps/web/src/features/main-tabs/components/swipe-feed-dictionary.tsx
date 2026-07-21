@@ -23,14 +23,23 @@ function SwipeFeedDictionaryContent({ initialTab = "feed" }: { initialTab?: "fee
   const touchStartY = useRef<number | null>(null);
   const isHorizontalSwipe = useRef<boolean | null>(null);
 
-  // URL query 및 pathname 변경 시 활성 탭 즉시 동기화
+  // URL query 및 popstate/tabchange 이벤트 발생 시 활성 탭 즉시 동기화
   useEffect(() => {
-    if (tabParam === "dictionary") {
-      setActiveTab("dictionary");
-    } else if (pathname === "/feed" || pathname === "/") {
-      setActiveTab("feed");
-    }
-  }, [pathname, tabParam]);
+    const syncTabFromUrl = () => {
+      if (typeof window === "undefined") return;
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      setActiveTab(tab === "dictionary" ? "dictionary" : "feed");
+    };
+
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+    window.addEventListener("tabchange", syncTabFromUrl);
+    return () => {
+      window.removeEventListener("popstate", syncTabFromUrl);
+      window.removeEventListener("tabchange", syncTabFromUrl);
+    };
+  }, []);
 
   // 피드 탭일 때 바디 브라우저 스크롤 전면 차단 (헤더 포함 100dvh 고정 뷰포트 락)
   useEffect(() => {
@@ -90,9 +99,11 @@ function SwipeFeedDictionaryContent({ initialTab = "feed" }: { initialTab?: "fee
       if (activeTab === "feed" && dragOffset < -threshold) {
         setActiveTab("dictionary");
         window.history.replaceState(null, "", "/?tab=dictionary");
+        window.dispatchEvent(new Event("tabchange"));
       } else if (activeTab === "dictionary" && dragOffset > threshold) {
         setActiveTab("feed");
         window.history.replaceState(null, "", "/");
+        window.dispatchEvent(new Event("tabchange"));
       }
     }
 
