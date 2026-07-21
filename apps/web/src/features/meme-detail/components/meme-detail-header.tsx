@@ -12,8 +12,9 @@ const statusMeta: Record<OriginStatus, { label: string; icon: typeof Check; clas
 };
 
 export function MemeDetailHeader({ meme }: { meme: Meme }) {
-  const status = statusMeta[meme.origin.status];
+  const status = statusMeta[meme.origin?.status] ?? statusMeta.verified;
   const StatusIcon = status.icon;
+  const aliases = meme.aliases ?? [];
   return (
     <header className="page-shell py-8 sm:py-12">
       <div className="mx-auto max-w-3xl">
@@ -26,7 +27,7 @@ export function MemeDetailHeader({ meme }: { meme: Meme }) {
         <div className="mt-7 flex flex-wrap items-center gap-2">
           <Badge className={status.className}><StatusIcon className="size-3.5" />{status.label}</Badge>
           {meme.kind === "minor-meme" && <Badge className="bg-black text-white">코리아 마이너 밈</Badge>}
-          {meme.origin.video && meme.origin.video.url && meme.origin.video.url.trim().length > 0 && (
+          {meme.origin?.video?.url && meme.origin.video.url.trim().length > 0 && (
             <Badge className="bg-[#fe2c55] text-white">
               원본 영상
             </Badge>
@@ -37,13 +38,13 @@ export function MemeDetailHeader({ meme }: { meme: Meme }) {
               {meme.lifecycle.ageYears !== undefined && ` · ${meme.lifecycle.ageYears === 0 ? "올해" : `${meme.lifecycle.ageYears}년 전`}`}
             </Badge>
           )}
-          <span className="text-xs font-medium text-black/35">{meme.origin.lastReviewedAt} 업데이트</span>
+          <span className="text-xs font-medium text-black/35">{meme.origin?.lastReviewedAt} 업데이트</span>
         </div>
         <h1 className="mt-5 text-5xl font-black leading-none tracking-[-0.065em] sm:text-7xl">{meme.title}</h1>
-        <p className="mt-3 text-sm font-medium text-black/35">{meme.aliases.join(" · ")}</p>
+        <p className="mt-3 text-sm font-medium text-black/35">{aliases.join(" · ")}</p>
         <p className="sr-only">
           {meme.title} 원본·원조를 확인하세요.
-          {meme.aliases.length > 0 && ` ${meme.aliases.slice(0, 4).map((alias) => `${alias} 원조`).join(", ")}로 검색되는 같은 밈·챌린지의 근거와 확산 과정도 함께 정리합니다.`}
+          {aliases.length > 0 && ` ${aliases.slice(0, 4).map((alias) => `${alias} 원조`).join(", ")}로 검색되는 같은 밈·챌린지의 근거와 확산 과정도 함께 정리합니다.`}
         </p>
       </div>
     </header>

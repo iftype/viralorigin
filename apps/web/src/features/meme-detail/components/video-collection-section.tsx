@@ -4,7 +4,7 @@ import type { Meme } from "@/types/meme";
 
 export function VideoCollectionSection({ meme, type }: { meme: Meme; type: "trending" | "related" }) {
   const trending = type === "trending";
-  const videos = trending ? meme.trendingVideos.slice(0, 3) : meme.relatedVideos;
+  const videos = trending ? (meme.trendingVideos ?? []).slice(0, 3) : (meme.relatedVideos ?? []);
   return (
     <section className={trending ? "border-y border-black/5 bg-white py-14 sm:py-20" : "page-shell py-14 sm:py-20"}>
       <div className={trending ? "page-shell" : undefined}>
