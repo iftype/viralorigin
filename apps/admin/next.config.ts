@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@origin/ui"],
   basePath: "/viral",
   assetPrefix: "/viral",
+  trailingSlash: true, // 정적 export 시 /dictionary/index.html 폴더 구조 생성하여 Nginx 403 방지
   images: { unoptimized: true },
   turbopack: {
     root: path.resolve(process.cwd(), "../.."),

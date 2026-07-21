@@ -5,7 +5,7 @@ export function BrandMark({ className }: { className?: string }) {
     <span
       aria-hidden="true"
       className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-xl bg-black text-sm font-black text-white shadow-[-3px_0_0_var(--vo-color-signal),3px_0_0_var(--vo-color-brand)]",
+        "relative flex size-8 shrink-0 items-center justify-center rounded-xl bg-black text-sm font-black text-white shadow-[-3px_0_0_var(--vo-color-signal),3px_0_0_var(--vo-color-brand)] mx-0.5",
         className,
       )}
     >

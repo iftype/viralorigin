@@ -11,7 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
-  BookOpen,
+  HelpCircle,
   Play,
 } from "lucide-react";
 import { Badge } from "@origin/ui";
@@ -76,7 +76,7 @@ export function FeedExperience() {
       },
       {
         root: containerRef.current,
-        threshold: 0.6,
+        threshold: 0.45,
       }
     );
 
@@ -150,7 +150,7 @@ export function FeedExperience() {
             const platformName = platformLabels[platform] ?? platform;
             const isActive = index === activeIndex;
 
-            // 시야에서 멀어진 오프스크린 영상 언마운트 (VM 인스턴스/네트워크 소켓 메모리 누수 100% 방지)
+            // 시야에서 멀어진 오프스크린 영상 언마운트 (VM 인스턴스/네트워크 소켓 메모리 누수 방지)
             const shouldRenderVideo = Math.abs(index - activeIndex) <= 1;
 
             return (
@@ -173,22 +173,12 @@ export function FeedExperience() {
                       onToggleMute={() => setGlobalMuted((prev) => !prev)}
                     />
                   ) : (
-                    /* 화면 밖으로 나간 지나친 비디오는 커넥션 100% 해제 (Unmounted Off-screen Placeholder) */
                     <div className="relative size-full bg-zinc-950 flex flex-col items-center justify-center text-white/20">
                       <Play className="size-12 animate-pulse" />
                     </div>
                   )}
 
-                  {/* 틱톡 오버레이 상단 바 */}
-                  <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none">
-                    <div className="flex items-center gap-1.5 text-xs font-black text-rose-500 pointer-events-auto">
-                      <Flame className="size-4" />
-                      <span className="tracking-wider uppercase">VIRAL SHORTS</span>
-                    </div>
-                    <span className="rounded-full bg-black/50 px-3 py-1 text-[0.68rem] font-bold text-white/80 backdrop-blur-md pointer-events-auto">
-                      {index + 1} / {memes.length}
-                    </span>
-                  </div>
+
 
                   {/* 틱톡 오버레이 우측 아이콘 액션 바 (공유 버튼) */}
                   <div className="absolute right-3 bottom-24 z-30 flex flex-col items-center gap-3">
@@ -207,8 +197,21 @@ export function FeedExperience() {
                     </button>
                   </div>
 
-                  {/* 틱톡 오버레이 최하단 밀착 정보 구역 & 명확한 [사전 상세 ↗] 버튼 */}
+                  {/* 틱톡 오버레이 최하단 정보 구역 */}
                   <div className="absolute left-0 right-0 bottom-0 z-20 p-4 sm:p-5 pb-3.5 pt-10 bg-gradient-to-t from-black/95 via-black/80 to-transparent text-left pointer-events-auto">
+                    {/* "원본 영상을 안다면?" 제보/수정 지원 칩 (미확정 항목에만 표시) */}
+                    {meme.origin.status !== "verified" && (
+                      <div className="mb-2">
+                        <Link
+                          href={`/submit?type=request&slug=${meme.slug}`}
+                          className="inline-flex items-center gap-1 rounded-full bg-amber-500/25 px-2.5 py-1 text-[0.65rem] font-extrabold text-amber-300 backdrop-blur-md hover:bg-amber-500/40 transition border border-amber-400/30"
+                        >
+                          <HelpCircle className="size-3" />
+                          <span>원본 영상을 안다면? 수정 제보하기</span>
+                        </Link>
+                      </div>
+                    )}
+
                     <Link
                       href={memeHref(meme.slug)}
                       className="block group transition hover:opacity-95"
@@ -252,7 +255,7 @@ export function FeedExperience() {
                       )}
                     </Link>
 
-                    {/* 선명하게 띄워놓은 상세 페이지 이동 CTA 버튼 */}
+                    {/* 선명하게 띄워놓은 "밈의 원본이 궁금하다면?" CTA 버튼 */}
                     <div className="mt-3.5 flex items-center justify-between border-t border-white/15 pt-2.5">
                       <span className="text-[0.68rem] font-bold text-white/60">
                         {meme.lifecycle?.originYear ? `${meme.lifecycle.originYear}년 유행` : "바이럴 밈"}
@@ -261,8 +264,8 @@ export function FeedExperience() {
                         href={memeHref(meme.slug)}
                         className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-4 py-1.5 text-xs font-black text-white shadow-lg transition hover:bg-rose-700 active:scale-95"
                       >
-                        <BookOpen className="size-3.5" />
-                        <span>사전 상세 보기</span>
+                        <Sparkles className="size-3.5" />
+                        <span>밈의 원본이 궁금하다면?</span>
                         <ExternalLink className="size-3" />
                       </Link>
                     </div>

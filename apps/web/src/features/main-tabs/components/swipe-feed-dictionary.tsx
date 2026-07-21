@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { FeedExperience } from "@/features/feed/components/feed-experience";
 import { SearchExperience } from "@/features/search/components/search-experience";
 
 export function SwipeFeedDictionary({ initialTab = "feed" }: { initialTab?: "feed" | "dictionary" }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
   const [activeTab, setActiveTab] = useState<"feed" | "dictionary">(
-    pathname.startsWith("/memes") ? "dictionary" : initialTab
+    tabParam === "dictionary" ? "dictionary" : initialTab
   );
 
   const [dragOffset, setDragOffset] = useState(0);
@@ -19,14 +22,26 @@ export function SwipeFeedDictionary({ initialTab = "feed" }: { initialTab?: "fee
   const touchStartY = useRef<number | null>(null);
   const isHorizontalSwipe = useRef<boolean | null>(null);
 
-  // URL 경로 변경 시 활성 탭 즉시 동기화
+  // URL query 및 pathname 변경 시 활성 탭 즉시 동기화
   useEffect(() => {
-    if (pathname.startsWith("/memes")) {
+    if (tabParam === "dictionary") {
       setActiveTab("dictionary");
     } else if (pathname === "/feed" || pathname === "/") {
       setActiveTab("feed");
     }
-  }, [pathname]);
+  }, [pathname, tabParam]);
+
+  // 피드 탭일 때 바디 브라우저 스크롤 전면 차단 (헤더 포함 100dvh 고정 뷰포트 락)
+  useEffect(() => {
+    if (activeTab === "feed") {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [activeTab]);
 
   // 터치 드래그 수평 따라오기 핸들러 (중간 과정 1:1 실시간 보여주기)
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -45,15 +60,18 @@ export function SwipeFeedDictionary({ initialTab = "feed" }: { initialTab?: "fee
 
     // 수평 스와이프인지 수직 스크롤인지 첫 판별
     if (isHorizontalSwipe.current === null) {
-      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 8) {
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 6) {
         isHorizontalSwipe.current = true;
-      } else if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 8) {
+      } else if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 6) {
         isHorizontalSwipe.current = false;
       }
     }
 
-    // 수평 스와이프 중일 때 손가락 움직임 그대로 실시간 반영 (중간 과정 렌더링)
+    // 수평 스와이프 중일 때 상/하 수직 스크롤을 100% 차단하고 수평 드래그 1:1 반영
     if (isHorizontalSwipe.current) {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
       let clampedDiff = diffX;
       if (activeTab === "feed" && diffX > 0) clampedDiff = diffX * 0.2;
       if (activeTab === "dictionary" && diffX < 0) clampedDiff = diffX * 0.2;
@@ -68,7 +86,7 @@ export function SwipeFeedDictionary({ initialTab = "feed" }: { initialTab?: "fee
 
       if (activeTab === "feed" && dragOffset < -threshold) {
         setActiveTab("dictionary");
-        window.history.replaceState(null, "", "/memes");
+        window.history.replaceState(null, "", "/?tab=dictionary");
       } else if (activeTab === "dictionary" && dragOffset > threshold) {
         setActiveTab("feed");
         window.history.replaceState(null, "", "/");
@@ -90,7 +108,7 @@ export function SwipeFeedDictionary({ initialTab = "feed" }: { initialTab?: "fee
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-black select-none"
+      className="relative h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-black select-none touch-pan-y"
     >
       {/* 손가락 실시간 드래그 움직임이 1:1로 중간 과정이 그대로 보이는 트랜지션 컨테이너 */}
       <div

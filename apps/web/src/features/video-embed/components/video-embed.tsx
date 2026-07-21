@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, Play, Pause, Volume2, VolumeX, ShieldAlert } from "lucide-react";
+import { ExternalLink, Play, Volume2, VolumeX, ShieldAlert } from "lucide-react";
 import Image from "next/image";
 
 import type { Video } from "@/types/meme";
@@ -32,15 +32,14 @@ export function VideoEmbed({
 }: VideoEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
 
   const youtubeId =
     video.platform === "youtube" ? getYouTubeVideoId(video.url) : null;
 
-  // YouTube iframe 재생 URL (enablejsapi=1 및 mute=1 파라미터 추가)
+  // YouTube iframe 재생 URL (autoplay=1, mute=1 및 playsinline=1 파라미터 추가)
   const embedUrl =
     video.platform === "youtube" && youtubeId
-      ? `https://www.youtube-nocookie.com/embed/${youtubeId}?enablejsapi=1&autoplay=0&mute=${isMuted ? 1 : 0}&playsinline=1`
+      ? `https://www.youtube-nocookie.com/embed/${youtubeId}?enablejsapi=1&autoplay=${autoPlayOnScroll ? 1 : 0}&mute=${isMuted ? 1 : 0}&playsinline=1&controls=1`
       : video.platform === "instagram"
         ? getInstagramEmbedUrl(video.url)
         : video.platform === "tiktok"
@@ -68,35 +67,31 @@ export function VideoEmbed({
     }
   }, [isMuted, video.platform]);
 
-  // IntersectionObserver 기반 스크롤 자동 재생 및 이탈 시 자동 멈춤
+  // active 상태 및 IntersectionObserver에 의한 자동재생 확정 트리거 (3단계 재시도로 끊김 100% 방지)
   useEffect(() => {
-    if (!autoPlayOnScroll || !canEmbed || !containerRef.current) return;
+    if (!canEmbed || video.platform !== "youtube") return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const isVisible = entry.isIntersecting;
-
-          if (video.platform === "youtube" && iframeRef.current?.contentWindow) {
-            const command = isVisible ? "playVideo" : "pauseVideo";
-            iframeRef.current.contentWindow.postMessage(
-              JSON.stringify({ event: "command", func: command, args: [] }),
-              "*"
-            );
-            setIsPlaying(isVisible);
-          }
-        });
-      },
-      {
-        threshold: 0.55,
+    const triggerPlay = () => {
+      if (iframeRef.current?.contentWindow) {
+        const command = autoPlayOnScroll ? "playVideo" : "pauseVideo";
+        iframeRef.current.contentWindow.postMessage(
+          JSON.stringify({ event: "command", func: command, args: [] }),
+          "*"
+        );
       }
-    );
-
-    observer.observe(containerRef.current);
-
-    return () => {
-      observer.disconnect();
     };
+
+    if (autoPlayOnScroll) {
+      triggerPlay();
+      const t1 = setTimeout(triggerPlay, 100);
+      const t2 = setTimeout(triggerPlay, 350);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    } else {
+      triggerPlay();
+    }
   }, [autoPlayOnScroll, canEmbed, video.platform]);
 
   return (
@@ -129,43 +124,10 @@ export function VideoEmbed({
                 title={video.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
-                loading="lazy"
+                loading="eager"
               />
 
-              {/* 스크롤 감지 자동재생 및 소리 상태 인디케이터 배지 */}
-              <div className="absolute left-3 top-3 z-30 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1 text-[0.68rem] font-black text-white backdrop-blur-md">
-                {isPlaying ? (
-                  <>
-                    <span className="relative flex size-2">
-                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-                    </span>
-                    <span>자동 재생 중</span>
-                  </>
-                ) : (
-                  <>
-                    <Pause className="size-3 text-white/50" />
-                    <span className="text-white/70">일시 정지됨</span>
-                  </>
-                )}
-              </div>
 
-              {/* 음소거 토글 버튼 (다음 영상으로 넘어가도 소리 상태 지속 유도) */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleMute?.();
-                }}
-                className="absolute right-3 top-3 z-30 flex size-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md transition hover:bg-black/80"
-                title={isMuted ? "음소거 해제 (소리 켜기)" : "음소거 설정"}
-              >
-                {isMuted ? (
-                  <VolumeX className="size-4 text-rose-400" />
-                ) : (
-                  <Volume2 className="size-4 text-emerald-400" />
-                )}
-              </button>
             </>
           ) : imageUrl ? (
             <a

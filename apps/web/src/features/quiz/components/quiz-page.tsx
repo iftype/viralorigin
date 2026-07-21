@@ -214,10 +214,10 @@ export function QuizPage() {
           </div>
 
           <div className="flex w-full shrink-0 items-center justify-between gap-2 px-1 sm:gap-4 sm:px-4">
-            <button className="flex-1 cursor-pointer rounded-xl bg-[#fe2c55] px-3 py-2.5 text-xs font-black text-white shadow-sm hover:bg-[#e51f48] sm:px-4 sm:py-3 sm:text-sm" onClick={() => handleSwipe("left")}>
+            <button className="flex-1 cursor-pointer rounded-xl bg-black px-3 py-2.5 text-xs font-black text-white shadow-sm hover:bg-black/80 sm:px-4 sm:py-3 sm:text-sm" onClick={() => handleSwipe("left")}>
               몰라요 (NO)
             </button>
-            <button className="flex-1 cursor-pointer rounded-xl bg-black px-3 py-2.5 text-xs font-black text-white shadow-sm hover:bg-black/80 sm:px-4 sm:py-3 sm:text-sm" onClick={() => handleSwipe("right")}>
+            <button className="flex-1 cursor-pointer rounded-xl bg-[#fe2c55] px-3 py-2.5 text-xs font-black text-white shadow-sm hover:bg-[#e51f48] sm:px-4 sm:py-3 sm:text-sm" onClick={() => handleSwipe("right")}>
               알아요 (KNOW)
             </button>
           </div>

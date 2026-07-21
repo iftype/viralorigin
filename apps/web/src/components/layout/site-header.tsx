@@ -3,7 +3,7 @@
 import { MessageCircleMore, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState, useOptimistic, startTransition } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { BrandMark, buttonClassName, cn } from "@origin/ui";
 
@@ -11,11 +11,13 @@ import { HeaderSearch } from "./header-search";
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [searchExpanded, setSearchExpanded] = useState(false);
 
-  // 접속 첫 화면(/ 및 /feed)은 피드가 기본 활성 탭
-  const currentTab = pathname.startsWith("/memes") ? "dictionary" : "feed";
+  const tabParam = searchParams.get("tab");
+  const currentTab = tabParam === "dictionary" ? "dictionary" : "feed";
+
   const [optimisticTab, setOptimisticTab] = useOptimistic(
     currentTab,
     (_state, newTab: "feed" | "dictionary") => newTab
@@ -33,27 +35,29 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-white/92 backdrop-blur-xl">
       <div className="page-shell py-2 sm:py-2.5">
-        <div className="relative flex items-center justify-between gap-2 md:grid md:grid-cols-[auto_1fr_minmax(14rem,24rem)_auto] md:gap-3">
-          <Link className="flex shrink-0 items-center gap-1.5 font-black" href="/">
+        <div className="relative flex items-center justify-between gap-1.5 sm:gap-2 md:grid md:grid-cols-[auto_1fr_minmax(14rem,24rem)_auto] md:gap-3">
+          <Link className="flex shrink-0 items-center gap-1.5 font-black pr-1" href="/">
             <BrandMark />
             <span
               className={cn(
-                "tracking-[-0.04em] transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] md:inline overflow-hidden whitespace-nowrap text-sm sm:text-base",
-                searchExpanded ? "max-sm:w-0 max-sm:opacity-0 max-sm:mr-0" : "max-sm:w-20 max-sm:opacity-100 max-sm:mr-1"
+                "tracking-[-0.04em] transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden whitespace-nowrap text-sm sm:text-base font-black leading-none",
+                searchExpanded
+                  ? "max-sm:w-0 max-sm:opacity-0 max-sm:mr-0"
+                  : "max-sm:w-auto max-sm:opacity-100 max-sm:mr-0.5"
               )}
             >
               VIRALORIGIN
             </span>
           </Link>
 
-          {/* 화면 상단 정중앙 낙관적 업데이트(Optimistic Update) 토글 스위치 */}
+          {/* 화면 상단 정중앙 낙관적 업데이트 토글 스위치 */}
           <div className="flex items-center justify-center min-w-0 mx-auto">
             <div className="flex items-center gap-0.5 rounded-full bg-black/5 p-1 text-xs font-black shadow-inner">
               <button
                 type="button"
                 onClick={() => handleTabClick("feed", "/")}
                 className={cn(
-                  "rounded-full px-3.5 py-1.5 transition-all duration-200 text-xs cursor-pointer",
+                  "rounded-full px-3 py-1.5 sm:px-3.5 transition-all duration-200 text-xs cursor-pointer",
                   optimisticTab === "feed"
                     ? "bg-black text-white shadow-md font-black"
                     : "text-black/50 hover:text-black"
@@ -63,9 +67,9 @@ export function SiteHeader() {
               </button>
               <button
                 type="button"
-                onClick={() => handleTabClick("dictionary", "/memes")}
+                onClick={() => handleTabClick("dictionary", "/?tab=dictionary")}
                 className={cn(
-                  "rounded-full px-3.5 py-1.5 transition-all duration-200 text-xs cursor-pointer",
+                  "rounded-full px-3 py-1.5 sm:px-3.5 transition-all duration-200 text-xs cursor-pointer",
                   optimisticTab === "dictionary"
                     ? "bg-black text-white shadow-md font-black"
                     : "text-black/50 hover:text-black"
