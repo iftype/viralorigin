@@ -2,7 +2,6 @@
 
 import "./globals.css";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import {
   Bell,
   BookOpenText,
@@ -13,6 +12,9 @@ import {
 } from "lucide-react";
 import { BrandMark, cn } from "@origin/ui";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
+
+const basePath = "/viral";
+const getMpaHref = (path: string) => (path === "/" ? `${basePath}/` : `${basePath}${path}/`);
 
 function Sidebar() {
   const pathname = usePathname();
@@ -37,10 +39,10 @@ function Sidebar() {
       <nav className="flex flex-row items-center gap-1 sm:mt-8 sm:flex-1 sm:flex-col sm:gap-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
           return (
-            <Link
-              href={item.href}
+            <a
+              href={getMpaHref(item.href)}
               key={item.href}
               title={item.label}
               className={cn(
@@ -50,7 +52,7 @@ function Sidebar() {
             >
               <Icon className="size-4 shrink-0 sm:size-5" />
               <span className="text-[0.68rem] font-bold sm:hidden">{item.label}</span>
-            </Link>
+            </a>
           );
         })}
       </nav>

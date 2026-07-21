@@ -130,7 +130,7 @@ export function DictionaryManager({
       !query.trim() ||
       item.title.toLowerCase().includes(query.toLowerCase()) ||
       item.slug.toLowerCase().includes(query.toLowerCase()) ||
-      item.tags.some((tag) => tag.toLowerCase().includes(query.toLowerCase()));
+      (item.tags ?? []).some((tag) => tag.toLowerCase().includes(query.toLowerCase()));
     const matchesStatus = statusFilter === "all" || item.publicationStatus === statusFilter;
     const matchesKind = kindFilter === "all" || item.kind === kindFilter;
     return matchesQuery && matchesStatus && matchesKind;
@@ -149,8 +149,8 @@ export function DictionaryManager({
     const base = editing;
 
     const originVideo: VideoMeta = {
-      ...(base?.origin.video ?? { id: `${slug}-origin` }),
-      id: base?.origin.video.id ?? `${slug}-origin`,
+      ...(base?.origin?.video ?? { id: `${slug}-origin` }),
+      id: base?.origin?.video?.id ?? `${slug}-origin`,
       platform: String(form.get("originPlatform")) as VideoMeta["platform"],
       url: String(form.get("originUrl") ?? "").trim(),
       title: String(form.get("originTitle") ?? "").trim(),
@@ -165,12 +165,12 @@ export function DictionaryManager({
         detail: String(form.get("evidenceDetail") ?? "").trim(),
         url: sourceUrl || undefined,
       },
-      ...(base?.origin.evidence.slice(1) ?? []),
+      ...(base?.origin?.evidence?.slice(1) ?? []),
     ];
 
     const timeline = [
       {
-        id: base?.timeline[0]?.id ?? `${slug}-timeline-1`,
+        id: base?.timeline?.[0]?.id ?? `${slug}-timeline-1`,
         dateLabel: String(form.get("timelineDate") ?? "").trim(),
         title: String(form.get("timelineTitle") ?? "").trim(),
         description: String(form.get("timelineDescription") ?? "").trim(),
@@ -178,7 +178,7 @@ export function DictionaryManager({
         sourceLabel: "관련 근거",
         kind: "origin" as const,
       },
-      ...(base?.timeline.slice(1) ?? []),
+      ...(base?.timeline?.slice(1) ?? []),
     ].filter((item) => item.dateLabel && item.title && item.description);
 
     const payload: AdminMeme = {
@@ -579,13 +579,13 @@ export function DictionaryManager({
 
                 <div className="mt-4 border-t border-zinc-100 pt-3">
                   <div className="mb-3 flex flex-wrap gap-1 min-h-[20px]">
-                    {item.tags.slice(0, 3).map((tag) => (
+                    {(item.tags ?? []).slice(0, 3).map((tag) => (
                       <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[0.62rem] font-bold text-zinc-500" key={tag}>
                         #{tag}
                       </span>
                     ))}
-                    {item.tags.length > 3 && (
-                      <span className="text-[0.62rem] font-bold text-zinc-400">+{item.tags.length - 3}</span>
+                    {(item.tags ?? []).length > 3 && (
+                      <span className="text-[0.62rem] font-bold text-zinc-400">+{(item.tags ?? []).length - 3}</span>
                     )}
                   </div>
 
@@ -693,7 +693,7 @@ export function DictionaryManager({
                         {item.summary || "설명 미등록"}
                       </td>
                       <td className="p-3.5 max-w-xs truncate text-zinc-400 font-mono text-[0.68rem]">
-                        {item.tags.map((t) => `#${t}`).join(" ")}
+                        {(item.tags ?? []).map((t) => `#${t}`).join(" ")}
                       </td>
                       <td className="p-3.5 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-1">
@@ -761,7 +761,7 @@ function MemeEntryForm({
   const [categorySearch, setCategorySearch] = useState("");
   const [tags, setTags] = useState<string[]>(editing?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
-  const [originUrl, setOriginUrl] = useState(editing?.origin.video.url ?? "");
+  const [originUrl, setOriginUrl] = useState(editing?.origin?.video?.url ?? "");
 
   const addTag = () => {
     const trimmed = tagInput.trim().replace(/^#/, "");
@@ -885,7 +885,7 @@ function MemeEntryForm({
           <input
             className="w-full rounded-xl border border-zinc-200 px-3.5 py-2 text-xs outline-none focus:border-zinc-900"
             name="aliases"
-            defaultValue={editing?.aliases.join(", ")}
+            defaultValue={editing?.aliases?.join(", ") ?? ""}
             placeholder="다이죠부, 료 챌린지"
           />
         </Field>
@@ -1033,7 +1033,7 @@ function MemeEntryForm({
           <select
             className="w-full cursor-pointer rounded-xl border border-zinc-200 px-3 py-2 font-bold outline-none focus:border-zinc-900"
             name="originStatus"
-            defaultValue={editing?.origin.status ?? "verified"}
+            defaultValue={editing?.origin?.status ?? "verified"}
           >
             <option value="verified">출처 확인 (Verified)</option>
             <option value="likely">유력 (Likely)</option>
@@ -1055,7 +1055,7 @@ function MemeEntryForm({
           <select
             className="w-full cursor-pointer rounded-xl border border-zinc-200 px-3 py-2 font-bold outline-none focus:border-zinc-900"
             name="originPlatform"
-            defaultValue={editing?.origin.video.platform ?? "youtube"}
+            defaultValue={editing?.origin?.video?.platform ?? "youtube"}
           >
             <option value="youtube">YouTube</option>
             <option value="tiktok">TikTok</option>
@@ -1084,7 +1084,7 @@ function MemeEntryForm({
               <span>실시간 영상 미리보기 (1/4 콤팩트)</span>
             </div>
             {ytId ? (
-              <div className="relative aspect-video w-full max-w-[260px] overflow-hidden rounded-xl bg-black border border-zinc-700 shadow-md">
+              <div className="relative aspect-video w-full max-w-[200px] overflow-hidden rounded-xl bg-black border border-zinc-700 shadow-md">
                 <iframe
                   className="absolute inset-0 size-full border-0"
                   src={`https://www.youtube-nocookie.com/embed/${ytId}`}
@@ -1094,7 +1094,7 @@ function MemeEntryForm({
                 />
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center p-3 text-center border border-dashed border-zinc-700 rounded-xl bg-zinc-800/50 max-w-[260px]">
+              <div className="flex flex-col items-center justify-center p-3 text-center border border-dashed border-zinc-700 rounded-xl bg-zinc-800/50 max-w-[200px]">
                 <Play className="size-6 text-zinc-400 mb-1" />
                 <p className="text-[0.68rem] font-bold text-zinc-300 truncate max-w-full">{originUrl}</p>
                 <a
@@ -1115,7 +1115,7 @@ function MemeEntryForm({
             className="w-full rounded-xl border border-zinc-200 px-3.5 py-2 text-xs outline-none focus:border-zinc-900"
             name="originTitle"
             required
-            defaultValue={editing?.origin.video.title}
+            defaultValue={editing?.origin?.video?.title}
             placeholder="영상 제목"
           />
         </Field>
@@ -1123,7 +1123,7 @@ function MemeEntryForm({
           <input
             className="w-full rounded-xl border border-zinc-200 px-3.5 py-2 text-xs outline-none focus:border-zinc-900"
             name="originCreator"
-            defaultValue={editing?.origin.video.creator}
+            defaultValue={editing?.origin?.video?.creator}
             placeholder="@ryo.cute"
           />
         </Field>
@@ -1133,7 +1133,7 @@ function MemeEntryForm({
             name="originSummary"
             required
             rows={2}
-            defaultValue={editing?.origin.summary}
+            defaultValue={editing?.origin?.summary}
             placeholder="원본 영상 유래 및 확산 개요"
           />
         </Field>
