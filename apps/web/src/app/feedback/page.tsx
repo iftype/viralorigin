@@ -6,7 +6,7 @@ import { SiteFeedbackForm } from "@/features/feedback/components/site-feedback-f
 
 export const metadata: Metadata = {
   title: "문의·피드백",
-  description: "ViralOrigin 사이트 사용 중 발견한 오류와 개선 의견을 운영자에게 보내세요.",
+  description: "ViralTimes 사이트 사용 중 발견한 오류와 개선 의견을 운영자에게 보내세요.",
 };
 
 import { SiteFooter } from "@/components/layout/site-footer";

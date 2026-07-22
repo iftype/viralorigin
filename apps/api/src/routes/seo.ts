@@ -12,7 +12,7 @@ const xmlEscape = (value: string) =>
 
 export function registerSeoRoutes(app: FastifyInstance, memeStore: MemeStore) {
   app.get("/api/v1/sitemap.xml", async (_request, reply) => {
-    const origin = (process.env.PUBLIC_WEB_ORIGIN ?? "https://viralorigin.vercel.app").replace(/\/$/, "");
+    const origin = (process.env.PUBLIC_WEB_ORIGIN ?? "https://viraltimes.vercel.app").replace(/\/$/, "");
     const items = await memeStore.list();
     const urls = [
       `<url><loc>${xmlEscape(origin)}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,

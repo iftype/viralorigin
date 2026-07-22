@@ -234,7 +234,7 @@ export class MetadataSuggestionService {
     let currentUrl = initialUrl;
     for (let redirectCount = 0; redirectCount <= 3; redirectCount += 1) {
       const response = await fetch(currentUrl, {
-        headers: { "User-Agent": "ViralOriginMetadataBot/1.0 (+https://viralorigin.vercel.app)" },
+        headers: { "User-Agent": "ViralTimesMetadataBot/1.0 (+https://viraltimes.vercel.app)" },
         redirect: "manual",
         signal: AbortSignal.timeout(5_000),
       });

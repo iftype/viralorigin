@@ -63,7 +63,7 @@ export function SiteHeader() {
                   : "max-sm:w-auto max-sm:opacity-100 max-sm:mr-0.5"
               )}
             >
-              VIRALORIGIN
+              VIRALTIMES
             </span>
           </Link>
 

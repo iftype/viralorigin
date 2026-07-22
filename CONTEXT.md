@@ -20,7 +20,7 @@
 - 공개 요청은 Nginx가 `127.0.0.1:4000`의 API로 프록시한다.
 - Oracle VM 호스트, SSH 사용자·키·배포 경로는 GitHub Actions Secret으로만 관리한다.
 - 실제 API 및 데이터베이스 자격 증명은 VM의 `/opt/origin/shared/api.env`에 둔다.
-- `iftype.store/viral`은 기존 서비스와 분리된 정적 파일이며 `/viral/api`만 ViralOrigin API로 프록시한다.
+- `iftype.store/viral`은 기존 서비스와 분리된 정적 파일이며 `/viral/api`만 ViralTimes API로 프록시한다.
 
 ## Delivery model
 

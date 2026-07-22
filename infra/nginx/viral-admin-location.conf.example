@@ -18,7 +18,7 @@ location ^~ /viral/api/ {
 }
 
 location ^~ /viral/ {
-    root /var/www/viralorigin-admin;
+    root /var/www/viraltimes-admin;
     index index.html;
     try_files $uri $uri/ $uri.html /viral/index.html;
 

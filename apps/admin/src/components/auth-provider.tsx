@@ -54,7 +54,7 @@ function Login({ onAuthenticated }: { onAuthenticated: () => void }) {
         <div className="flex items-center gap-3">
           <BrandMark className="size-11 rounded-2xl text-lg" />
           <div>
-            <p className="text-sm font-black tracking-[-0.04em]">VIRALORIGIN</p>
+            <p className="text-sm font-black tracking-[-0.04em]">VIRALTIMES</p>
             <p className="text-xs font-bold text-black/35">ADMIN</p>
           </div>
         </div>

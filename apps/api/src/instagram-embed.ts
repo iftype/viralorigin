@@ -57,7 +57,7 @@ export class InstagramEmbedAvailability {
       const response = await fetch(embedUrl, {
         headers: {
           "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
-          "User-Agent": "Mozilla/5.0 (compatible; ViralOriginEmbedCheck/1.0; +https://viralorigin.vercel.app)",
+          "User-Agent": "Mozilla/5.0 (compatible; ViralTimesEmbedCheck/1.0; +https://viraltimes.vercel.app)",
         },
         signal: AbortSignal.timeout(6_000),
       });

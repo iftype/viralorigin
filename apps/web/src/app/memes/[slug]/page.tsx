@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     openGraph: {
       type: "article",
       locale: "ko_KR",
-      siteName: "ViralOrigin",
+      siteName: "ViralTimes",
       title: seo.title,
       description: seo.description,
       url: seo.canonicalUrl,

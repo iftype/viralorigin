@@ -1,6 +1,6 @@
 import type { Meme } from "@/types/meme";
 
-export const publicWebOrigin = "https://viralorigin.vercel.app";
+export const publicWebOrigin = "https://viraltimes.vercel.app";
 
 export function buildMemeSeo(meme: Meme) {
   const canonicalUrl = `${publicWebOrigin}/memes/${encodeURIComponent(meme.slug)}`;
@@ -32,9 +32,9 @@ export function buildMemeSeo(meme: Meme) {
     dateModified: meme.origin.lastReviewedAt,
     image: image ? [image] : undefined,
     keywords: keywords.join(", "),
-    author: { "@type": "Organization", name: "ViralOrigin", url: publicWebOrigin },
-    publisher: { "@type": "Organization", name: "ViralOrigin", url: publicWebOrigin },
-    isPartOf: { "@type": "WebSite", name: "ViralOrigin", url: publicWebOrigin },
+    author: { "@type": "Organization", name: "ViralTimes", url: publicWebOrigin },
+    publisher: { "@type": "Organization", name: "ViralTimes", url: publicWebOrigin },
+    isPartOf: { "@type": "WebSite", name: "ViralTimes", url: publicWebOrigin },
     about: {
       "@type": "Thing",
       name: meme.title,

@@ -94,7 +94,7 @@ export function QuizLogManager({ logs, memes, onChange }: { logs: QuizLog[]; mem
     const url = URL.createObjectURL(new Blob(["\uFEFF", content], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = `viralorigin-quiz-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `viraltimes-quiz-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }

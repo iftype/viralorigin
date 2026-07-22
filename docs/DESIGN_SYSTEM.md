@@ -1,4 +1,4 @@
-# ViralOrigin design system
+# ViralTimes design system
 
 ## Product tone
 

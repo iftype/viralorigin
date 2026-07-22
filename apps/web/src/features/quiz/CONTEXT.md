@@ -1,6 +1,6 @@
 # Quiz feature
 
-- 목적: 사용자가 밈을 이미 아는지와 ViralOrigin의 설명을 본 뒤 이해에 도움이 됐는지를 분리 측정한다.
+- 목적: 사용자가 밈을 이미 아는지와 ViralTimes의 설명을 본 뒤 이해에 도움이 됐는지를 분리 측정한다.
 - 한 세션은 관리자가 정한 최대 5개 published 사전 항목을 보여준다. deck이 비어 있을 때만 공개 항목을 무작위로 고른다.
 - 판단 응답은 `know`/`dont_know`, 실제 상세 modal은 `view_media`, 완료 후 밈·서비스 이동은 `open_meme`/`open_service`다.
 - 각 테스트 시작마다 `runId`를 발급하고 `start` → 카드별 step → `complete` → 외부 CTA 이벤트를 저장해 중도 이탈 퍼널을 계산한다.

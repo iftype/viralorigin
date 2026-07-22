@@ -96,7 +96,7 @@ function Header() {
   return (
     <header className="sticky top-14 z-30 hidden h-12 items-center justify-between border-b border-black/5 bg-white/80 px-4 backdrop-blur-xl sm:flex sm:top-0 sm:h-14 sm:px-6">
       <div className="flex items-center gap-2 text-xs font-bold text-black/45">
-        <span className="font-black text-black">VIRALORIGIN</span>
+        <span className="font-black text-black">VIRALTIMES</span>
         <span className="text-black/20">/</span>
         <span>{getBreadcrumb()}</span>
       </div>
@@ -128,7 +128,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <head>
-        <title>ViralOrigin Admin</title>
+        <title>ViralTimes Admin</title>
         <meta name="robots" content="noindex, nofollow" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>

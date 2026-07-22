@@ -1,10 +1,10 @@
-# ViralOrigin product and engineering plan
+# ViralTimes product and engineering plan
 
 마지막 갱신: 2026-07-20
 
 ## Product direction
 
-ViralOrigin은 단순 링크 모음이 아니라 원본 주장, 근거, 확산 과정, 반론과 수정 이력을 함께 보여주는 밈 사전이다. 로그인 없이도 읽고 가볍게 참여할 수 있어야 하지만, 공개 데이터 품질은 운영자 검토와 단계적 abuse 방어로 지킨다.
+ViralTimes는 단순 링크 모음이 아니라 원본 주장, 근거, 확산 과정, 반론과 수정 이력을 함께 보여주는 밈 사전이다. 로그인 없이도 읽고 가볍게 참여할 수 있어야 하지만, 공개 데이터 품질은 운영자 검토와 단계적 abuse 방어로 지킨다.
 
 ## Current baseline
 

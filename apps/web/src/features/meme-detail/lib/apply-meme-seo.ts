@@ -6,7 +6,7 @@ const upsertMeta = (selector: string, attributes: Record<string, string>) => {
   let element = document.head.querySelector<HTMLMetaElement>(selector);
   if (!element) {
     element = document.createElement("meta");
-    element.dataset.viraloriginSeo = "true";
+    element.dataset.viraltimesSeo = "true";
     document.head.appendChild(element);
   }
   for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value);
@@ -33,15 +33,15 @@ export function applyMemeSeo(meme: Meme) {
   if (!canonical) {
     canonical = document.createElement("link");
     canonical.rel = "canonical";
-    canonical.dataset.viraloriginSeo = "true";
+    canonical.dataset.viraltimesSeo = "true";
     document.head.appendChild(canonical);
   }
   canonical.href = canonicalUrl;
 
-  document.head.querySelector('script[data-viralorigin-seo="jsonld"]')?.remove();
+  document.head.querySelector('script[data-viraltimes-seo="jsonld"]')?.remove();
   const jsonLdElement = document.createElement("script");
   jsonLdElement.type = "application/ld+json";
-  jsonLdElement.dataset.viraloriginSeo = "jsonld";
+  jsonLdElement.dataset.viraltimesSeo = "jsonld";
   jsonLdElement.text = JSON.stringify(structuredData);
   document.head.appendChild(jsonLdElement);
 
@@ -51,6 +51,6 @@ export function applyMemeSeo(meme: Meme) {
       existingDescription.content = originalDescription;
     }
     if (existingCanonical && originalCanonical) existingCanonical.href = originalCanonical;
-    document.head.querySelectorAll('[data-viralorigin-seo="true"], script[data-viralorigin-seo="jsonld"]').forEach((element) => element.remove());
+    document.head.querySelectorAll('[data-viraltimes-seo="true"], script[data-viraltimes-seo="jsonld"]').forEach((element) => element.remove());
   };
 }
