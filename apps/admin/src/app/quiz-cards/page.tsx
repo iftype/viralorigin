@@ -5,6 +5,7 @@ import { LoaderCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { QuizCardManager, type QuizCardConfig } from "@/components/quiz-card-manager";
 import type { AdminMeme } from "@/components/dictionary-manager";
+import { QuizSurveyManager, type QuizSurveyQuestion } from "@/components/quiz-survey-manager";
 
 const apiBase = "/viral/api/v1";
 
@@ -12,6 +13,7 @@ export default function QuizCardsPage() {
   const { setAuthenticated } = useAuth();
   const [quizCards, setQuizCards] = useState<QuizCardConfig[]>([]);
   const [memes, setMemes] = useState<AdminMeme[]>([]);
+  const [surveyQuestions, setSurveyQuestions] = useState<QuizSurveyQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -19,24 +21,28 @@ export default function QuizCardsPage() {
     setLoading(true);
     setError("");
     try {
-      const [cardsResponse, memeResponse] = await Promise.all([
+      const [cardsResponse, memeResponse, surveyResponse] = await Promise.all([
         fetch(`${apiBase}/admin/quiz/cards`, { cache: "no-store" }),
         fetch(`${apiBase}/admin/memes`, { cache: "no-store" }),
+        fetch(`${apiBase}/admin/quiz/survey-questions`, { cache: "no-store" }),
       ]);
 
-      if (cardsResponse.status === 401 || memeResponse.status === 401) {
+      if (cardsResponse.status === 401 || memeResponse.status === 401 || surveyResponse.status === 401) {
         setAuthenticated(false);
         return;
       }
 
       if (!cardsResponse.ok) throw new Error("퀴즈 카드 데이터를 불러오지 못했습니다.");
       if (!memeResponse.ok) throw new Error("사전 데이터를 불러오지 못했습니다.");
+      if (!surveyResponse.ok) throw new Error("추가 설문 데이터를 불러오지 못했습니다.");
 
       const cardsData = (await cardsResponse.json()) as { items: QuizCardConfig[] };
       const memeData = (await memeResponse.json()) as { items: AdminMeme[] };
+      const surveyData = (await surveyResponse.json()) as { items: QuizSurveyQuestion[] };
 
       setQuizCards(cardsData.items || []);
       setMemes(memeData.items || []);
+      setSurveyQuestions(surveyData.items || []);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "데이터를 불러오지 못했습니다.");
     } finally {
@@ -58,6 +64,7 @@ export default function QuizCardsPage() {
   }
 
   const managerKey = quizCards.map((card) => `${card.id}:${card.updatedAt}`).join("|");
+  const surveyKey = surveyQuestions.map((question) => `${question.id}:${question.updatedAt}`).join("|");
 
   return (
     <div className="space-y-6">
@@ -76,6 +83,7 @@ export default function QuizCardsPage() {
       )}
 
       <QuizCardManager key={managerKey} items={quizCards} memes={memes} onChange={setQuizCards} />
+      <QuizSurveyManager key={surveyKey} items={surveyQuestions} onChange={setSurveyQuestions} />
     </div>
   );
 }

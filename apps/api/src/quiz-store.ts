@@ -2,7 +2,13 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-import type { QuizCardConfig, QuizLog, QuizLogDocument } from "./quiz-types.js";
+import type {
+  QuizCardConfig,
+  QuizLog,
+  QuizLogDocument,
+  QuizSurveyAnswer,
+  QuizSurveyQuestion,
+} from "./quiz-types.js";
 
 const legacyMigrationName = "quiz-json-v1";
 
@@ -25,6 +31,27 @@ type QuizCardRow = {
   enabled: number;
   sort_order: number;
   updated_at: string;
+};
+
+type QuizSurveyQuestionRow = {
+  id: string;
+  prompt: string;
+  required: number;
+  sort_order: number;
+  updated_at: string;
+};
+
+type QuizSurveyOptionRow = { id: string; question_id: string; label: string; sort_order: number };
+
+type QuizSurveyAnswerRow = {
+  id: string;
+  session_id: string;
+  run_id: string;
+  question_id: string;
+  option_id: string;
+  question_prompt: string;
+  option_label: string;
+  timestamp: string;
 };
 
 export class QuizStore {
@@ -68,13 +95,21 @@ export class QuizStore {
   }
 
   async deleteSession(sessionId: string): Promise<number> {
-    const result = this.database.prepare("DELETE FROM quiz_logs WHERE session_id = ?").run(sessionId);
-    return Number(result.changes);
+    let deleted = 0;
+    this.inTransaction(() => {
+      deleted += Number(this.database.prepare("DELETE FROM quiz_logs WHERE session_id = ?").run(sessionId).changes);
+      deleted += Number(this.database.prepare("DELETE FROM quiz_survey_answers WHERE session_id = ?").run(sessionId).changes);
+    });
+    return deleted;
   }
 
   async clearLogs(): Promise<number> {
-    const result = this.database.prepare("DELETE FROM quiz_logs").run();
-    return Number(result.changes);
+    let deleted = 0;
+    this.inTransaction(() => {
+      deleted += Number(this.database.prepare("DELETE FROM quiz_logs").run().changes);
+      deleted += Number(this.database.prepare("DELETE FROM quiz_survey_answers").run().changes);
+    });
+    return deleted;
   }
 
   async getCards(): Promise<QuizCardConfig[]> {
@@ -99,6 +134,88 @@ export class QuizStore {
       for (const card of cards) this.insertCard(card);
     });
     return cards;
+  }
+
+  async getSurveyQuestions(): Promise<QuizSurveyQuestion[]> {
+    const questions = this.database.prepare(`
+      SELECT id, prompt, required, sort_order, updated_at
+      FROM quiz_survey_questions
+      ORDER BY sort_order ASC, id ASC
+    `).all() as unknown as QuizSurveyQuestionRow[];
+    const options = this.database.prepare(`
+      SELECT id, question_id, label, sort_order
+      FROM quiz_survey_options
+      ORDER BY sort_order ASC, id ASC
+    `).all() as unknown as QuizSurveyOptionRow[];
+    return questions.map((question) => ({
+      id: question.id,
+      prompt: question.prompt,
+      required: Boolean(question.required),
+      sortOrder: question.sort_order,
+      updatedAt: question.updated_at,
+      options: options
+        .filter((option) => option.question_id === question.id)
+        .map((option) => ({ id: option.id, label: option.label })),
+    }));
+  }
+
+  async replaceSurveyQuestions(questions: QuizSurveyQuestion[]): Promise<QuizSurveyQuestion[]> {
+    this.inTransaction(() => {
+      this.database.exec("DELETE FROM quiz_survey_questions");
+      for (const question of questions) {
+        this.database.prepare(`
+          INSERT INTO quiz_survey_questions (id, prompt, required, sort_order, updated_at)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(question.id, question.prompt, question.required ? 1 : 0, question.sortOrder, question.updatedAt);
+        question.options.forEach((option, optionIndex) => {
+          this.database.prepare(`
+            INSERT INTO quiz_survey_options (id, question_id, label, sort_order)
+            VALUES (?, ?, ?, ?)
+          `).run(option.id, question.id, option.label, optionIndex);
+        });
+      }
+    });
+    return questions;
+  }
+
+  async addSurveyAnswer(answer: QuizSurveyAnswer): Promise<void> {
+    this.database.prepare(`
+      INSERT INTO quiz_survey_answers (
+        id, session_id, run_id, question_id, option_id, question_prompt, option_label, timestamp
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(run_id, question_id) DO UPDATE SET
+        option_id = excluded.option_id,
+        question_prompt = excluded.question_prompt,
+        option_label = excluded.option_label,
+        timestamp = excluded.timestamp
+    `).run(
+      answer.id,
+      answer.sessionId,
+      answer.runId,
+      answer.questionId,
+      answer.optionId,
+      answer.questionPrompt,
+      answer.optionLabel,
+      answer.timestamp,
+    );
+  }
+
+  async getSurveyAnswers(): Promise<QuizSurveyAnswer[]> {
+    const rows = this.database.prepare(`
+      SELECT id, session_id, run_id, question_id, option_id, question_prompt, option_label, timestamp
+      FROM quiz_survey_answers
+      ORDER BY timestamp ASC, id ASC
+    `).all() as unknown as QuizSurveyAnswerRow[];
+    return rows.map((row) => ({
+      id: row.id,
+      sessionId: row.session_id,
+      runId: row.run_id,
+      questionId: row.question_id,
+      optionId: row.option_id,
+      questionPrompt: row.question_prompt,
+      optionLabel: row.option_label,
+      timestamp: row.timestamp,
+    }));
   }
 
   close() {
@@ -142,6 +259,41 @@ export class QuizStore {
         ON quiz_logs (run_id, timestamp) WHERE run_id IS NOT NULL;
       CREATE INDEX IF NOT EXISTS quiz_logs_card_idx
         ON quiz_logs (card_id, timestamp);
+
+      CREATE TABLE IF NOT EXISTS quiz_survey_questions (
+        id TEXT PRIMARY KEY,
+        prompt TEXT NOT NULL,
+        required INTEGER NOT NULL CHECK (required IN (0, 1)),
+        sort_order INTEGER NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS quiz_survey_options (
+        id TEXT PRIMARY KEY,
+        question_id TEXT NOT NULL REFERENCES quiz_survey_questions(id) ON DELETE CASCADE,
+        label TEXT NOT NULL,
+        sort_order INTEGER NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS quiz_survey_options_question_idx
+        ON quiz_survey_options (question_id, sort_order);
+
+      CREATE TABLE IF NOT EXISTS quiz_survey_answers (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        run_id TEXT NOT NULL,
+        question_id TEXT NOT NULL,
+        option_id TEXT NOT NULL,
+        question_prompt TEXT NOT NULL,
+        option_label TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        UNIQUE (run_id, question_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS quiz_survey_answers_session_idx
+        ON quiz_survey_answers (session_id, timestamp);
+      CREATE INDEX IF NOT EXISTS quiz_survey_answers_question_idx
+        ON quiz_survey_answers (question_id, option_id);
     `);
   }
 

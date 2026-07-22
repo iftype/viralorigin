@@ -12,11 +12,11 @@
 - 댓글과 수정 제안은 `PARTICIPATION_DATA_FILE`에 분리 저장하며 공개 API에서 페이지네이션한다. 제안은 section/action이 필수이고 관리자 `proposal` inbox도 함께 만든다.
 - participation POST는 IP 원문을 저장하지 않고 프로세스 메모리 기반 단기 rate limit, honeypot, 길이·링크 검증을 적용한다.
 - `GET /api/v1/sitemap.xml`은 사전 목록 `/memes`와 published 사전의 `/memes/:slug` URL을 동적으로 만든다.
-- `GET /api/v1/embeds/instagram?url=`은 Instagram 공식 embed HTML을 짧게 검사하고 외부 임베드 가능 여부를 15분 캐시한다. 비공개·삭제·작성자 차단 게시물은 공개 페이지가 존재해도 `available: false`일 수 있다.
+- `GET /api/v1/embeds/instagram?url=`은 Instagram 공식 embed HTML을 짧게 검사하고 결과를 15분 캐시한다. 응답은 `available: true | false | null`이며 실제 삭제 표식만 `false`, 서버 IP 제한·timeout·알 수 없는 형식은 `null`로 반환한다.
 - 관리자 사전 API는 draft/published/archived 상태와 slug 중복을 관리하고 `MEME_DATA_FILE`에 원자적으로 저장한다.
 - 밈의 `lifecycle.originYear/firstSeenAt/lastObservedAt`은 연도 탐색과 수명 표시의 기준이다. 기존 데이터는 origin timeline과 업로드 날짜에서 originYear를 보완한다.
 - 트렌드 시계열은 `TREND_DATA_FILE`에 밈·날짜·source·metric 조합으로 upsert한다. 공개 GET은 읽기 전용이고 internal batch POST만 `TREND_INGEST_TOKEN`을 요구한다.
 - 밈은 `relatedMemeIds`로 파생·연결 관계를 저장한다. 공개 상세의 다른 항목은 이 관계를 먼저 사용한다.
 - 영상은 `feedVisible`로 피드 노출을 제어하며 필드가 없는 기존 데이터는 노출로 간주한다. 챌린지 `origin.video`와 `trendingVideos`만 피드 후보이고 `origin.musicVideo`·`origin.choreographyVideo`는 상세의 보조 원본이다. 원본 영상이 비어 있으면 검토 상태는 `needs-review`로 정규화한다.
-- 퀴즈 구성과 원시 로그는 WAL 모드의 `QUIZ_DB_FILE` SQLite에 보존한다. 기존 `QUIZ_LOG_FILE` JSON이 있으면 `schema_migrations`로 최초 1회만 가져온다. 새 로그는 익명 `sessionId`, 실행별 `runId`, 0~5 step과 선택형 destination을 저장하며 공개 stats는 실행별 퍼널을 반환한다. 관리자 API는 최대 5개 deck 교체와 세션별·전체 로그 삭제를 제공한다.
+- 퀴즈 구성과 원시 로그는 WAL 모드의 `QUIZ_DB_FILE` SQLite에 보존한다. 기존 `QUIZ_LOG_FILE` JSON이 있으면 `schema_migrations`로 최초 1회만 가져온다. 새 로그는 익명 `sessionId`, 실행별 `runId`, 0~5 step과 선택형 destination을 저장하며 공개 stats는 실행별 퍼널을 반환한다. 추가 설문 구성·선택지·응답도 같은 DB에 저장하고 응답 당시 문구를 보존한다. 관리자 API는 최대 5개 deck과 최대 5개 설문 교체, 세션별·전체 로그 및 설문 응답 삭제를 제공한다.
 - 최근 사용 신호는 `MEME_PULSE_FILE`에 날짜별로 upsert하며 같은 브라우저·밈·날짜 응답은 마지막 선택으로 교체한다.
