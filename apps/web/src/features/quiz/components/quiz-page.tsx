@@ -240,7 +240,7 @@ export function QuizPage() {
               밈 인지도 매치 테스트
             </h1>
             <p className="text-xs font-medium text-neutral-500">
-              알면 오른쪽, 모르면 왼쪽으로 넘겨주세요.
+              영상을 카드 안에서 확인하고, 알면 오른쪽·모르면 왼쪽으로 넘겨주세요.
             </p>
             <div className="flex items-center justify-between px-2 pt-1 text-[0.68rem] font-bold text-neutral-400">
               <span>PROGRESS</span>
