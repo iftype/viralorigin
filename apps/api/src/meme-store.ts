@@ -2,38 +2,12 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 import type { Meme, MemeDocument, PublicationStatus, StoredMeme } from "./meme-types.js";
-import { legacyCategoryIds } from "./category-defaults.js";
-import { defaultMemes } from "./meme-defaults.js";
+import { legacyCategoryIds } from "./category-legacy.js";
 
 export class MemeStore {
   private writeQueue = Promise.resolve();
 
   constructor(private readonly filePath: string) {}
-
-  async ensureDefaults() {
-    await this.serialWrite(async () => {
-      const document = await this.read();
-      let changed = false;
-      const existingIds = new Set(document.items.map((item) => item.id));
-      const now = new Date().toISOString();
-
-      for (const meme of defaultMemes) {
-        if (!existingIds.has(meme.id)) {
-          document.items.push({
-            ...meme,
-            publicationStatus: "published",
-            createdAt: now,
-            updatedAt: now,
-          });
-          changed = true;
-        }
-      }
-
-      if (changed) {
-        await this.write(document);
-      }
-    });
-  }
 
   async list(includeUnpublished = false) {
     const document = await this.read();

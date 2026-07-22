@@ -7,6 +7,7 @@
 - `index.ts`는 설정과 조립만 담당하고 공개 사전, intake, 관리자, health 라우트는 `routes/`가 소유한다.
 - 공개 카테고리는 `GET /api/v1/categories`, 사전은 `GET /api/v1/memes?page=&pageSize=&categories=&tags=&query=&verification=&year=&fromYear=&toYear=&sort=`와 `GET /api/v1/memes/:slug`로 제공한다. comma-separated category/tag는 각각 OR 조건이며 pageSize 최대값은 48, 목록 응답은 year와 상위 tag facet을 포함한다.
 - 카테고리는 `CATEGORY_DATA_FILE`에서 관리하고 meme은 `categoryIds`로 연결한다. 기존 데이터는 읽을 때 legacy kind/tag를 초기 category ID로 변환한다.
+- 서버 시작과 저장 파일 누락 시 기본 밈·카테고리를 자동 생성하지 않는다. 빈 저장소는 빈 목록으로 시작하며 초기 등록은 관리자 API나 명시적인 migration으로만 수행한다.
 - 관리자 카테고리 API는 생성·수정·활성화·정렬을 제공하며 hard delete 대신 비활성화를 사용한다.
 - 댓글과 수정 제안은 `PARTICIPATION_DATA_FILE`에 분리 저장하며 공개 API에서 페이지네이션한다. 제안은 section/action이 필수이고 관리자 `proposal` inbox도 함께 만든다.
 - participation POST는 IP 원문을 저장하지 않고 프로세스 메모리 기반 단기 rate limit, honeypot, 길이·링크 검증을 적용한다.
@@ -15,5 +16,5 @@
 - 밈의 `lifecycle.originYear/firstSeenAt/lastObservedAt`은 연도 탐색과 수명 표시의 기준이다. 기존 데이터는 origin timeline과 업로드 날짜에서 originYear를 보완한다.
 - 트렌드 시계열은 `TREND_DATA_FILE`에 밈·날짜·source·metric 조합으로 upsert한다. 공개 GET은 읽기 전용이고 internal batch POST만 `TREND_INGEST_TOKEN`을 요구한다.
 - 밈은 `relatedMemeIds`로 파생·연결 관계를 저장한다. 공개 상세의 다른 항목은 이 관계를 먼저 사용한다.
-- 퀴즈 구성과 원시 로그는 `QUIZ_LOG_FILE` 하나에 함께 보존한다. 새 로그는 익명 `sessionId`, 실행별 `runId`, 0~5 step과 선택형 destination을 저장하며 공개 stats는 실행별 퍼널을 반환한다. 관리자 API는 최대 5개 deck 교체와 세션별·전체 로그 삭제를 제공한다.
+- 퀴즈 구성과 원시 로그는 WAL 모드의 `QUIZ_DB_FILE` SQLite에 보존한다. 기존 `QUIZ_LOG_FILE` JSON이 있으면 `schema_migrations`로 최초 1회만 가져온다. 새 로그는 익명 `sessionId`, 실행별 `runId`, 0~5 step과 선택형 destination을 저장하며 공개 stats는 실행별 퍼널을 반환한다. 관리자 API는 최대 5개 deck 교체와 세션별·전체 로그 삭제를 제공한다.
 - 최근 사용 신호는 `MEME_PULSE_FILE`에 날짜별로 upsert하며 같은 브라우저·밈·날짜 응답은 마지막 선택으로 교체한다.
