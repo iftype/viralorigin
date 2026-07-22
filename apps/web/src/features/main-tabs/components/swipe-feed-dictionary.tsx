@@ -29,7 +29,7 @@ function SwipeFeedDictionaryContent({ initialTab = "feed" }: { initialTab?: "fee
       try {
         setShowSwipeTutorial(
           window.innerWidth < 768 &&
-            window.localStorage.getItem("viralorigin-swipe-tutorial") !== "done",
+            window.localStorage.getItem("viraltimes-swipe-tutorial") !== "done",
         );
       } catch {
         setShowSwipeTutorial(window.innerWidth < 768);
@@ -112,7 +112,7 @@ function SwipeFeedDictionaryContent({ initialTab = "feed" }: { initialTab?: "fee
   const dismissSwipeTutorial = () => {
     setShowSwipeTutorial(false);
     try {
-      window.localStorage.setItem("viralorigin-swipe-tutorial", "done");
+      window.localStorage.setItem("viraltimes-swipe-tutorial", "done");
     } catch {
       // 저장소를 사용할 수 없는 브라우저에서도 닫기는 유지한다.
     }

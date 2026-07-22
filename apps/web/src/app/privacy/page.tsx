@@ -6,7 +6,7 @@ import { Card } from "@origin/ui";
 
 export const metadata: Metadata = {
   title: "개인정보처리방침",
-  description: "ViralOrigin 개인정보 처리 기준을 안내합니다.",
+  description: "ViralTimes 개인정보 처리 기준을 안내합니다.",
 };
 
 const sections = [

@@ -12,12 +12,13 @@ const xmlEscape = (value: string) =>
 
 export function registerSeoRoutes(app: FastifyInstance, memeStore: MemeStore) {
   app.get("/api/v1/sitemap.xml", async (_request, reply) => {
-    const origin = (process.env.PUBLIC_WEB_ORIGIN ?? "https://viralorigin.vercel.app").replace(/\/$/, "");
+    const origin = (process.env.PUBLIC_WEB_ORIGIN ?? "https://viraltimes.vercel.app").replace(/\/$/, "");
     const items = await memeStore.list();
     const urls = [
       `<url><loc>${xmlEscape(origin)}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
+      `<url><loc>${xmlEscape(`${origin}/memes`)}</loc><changefreq>daily</changefreq><priority>0.9</priority></url>`,
       ...items.map(
-        (item) => `<url><loc>${xmlEscape(`${origin}/memes/${item.slug}`)}</loc><lastmod>${xmlEscape(item.updatedAt.slice(0, 10))}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
+        (item) => `<url><loc>${xmlEscape(`${origin}/memes/${encodeURIComponent(item.slug)}`)}</loc><lastmod>${xmlEscape(item.updatedAt.slice(0, 10))}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
       ),
     ];
     reply.header("Content-Type", "application/xml; charset=utf-8");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ExternalLink, Play, Volume2, VolumeX, ShieldAlert } from "lucide-react";
 import Image from "next/image";
 
@@ -32,6 +32,28 @@ export function VideoEmbed({
 }: VideoEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [instagramAvailable, setInstagramAvailable] = useState<boolean | null>(
+    video.platform === "instagram" ? null : true,
+  );
+
+  useEffect(() => {
+    if (video.platform !== "instagram") return;
+    let active = true;
+    void fetch(`/api/v1/embeds/instagram?url=${encodeURIComponent(video.url)}`)
+      .then(async (response) => {
+        if (!response.ok) return false;
+        return ((await response.json()) as { available?: boolean }).available === true;
+      })
+      .then((available) => {
+        if (active) setInstagramAvailable(available);
+      })
+      .catch(() => {
+        if (active) setInstagramAvailable(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [video.platform, video.url]);
 
   const youtubeId =
     video.platform === "youtube" ? getYouTubeVideoId(video.url) : null;
@@ -46,7 +68,8 @@ export function VideoEmbed({
           ? getTikTokEmbedUrl(video.url)
           : null;
 
-  const canEmbed = Boolean(embedUrl);
+  const canEmbed = Boolean(embedUrl) && (video.platform !== "instagram" || instagramAvailable === true);
+  const instagramUnavailable = video.platform === "instagram" && instagramAvailable === false;
   const imageUrl = video.thumbnailUrl
     ? video.thumbnailUrl.startsWith("/")
       ? `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${video.thumbnailUrl}`
@@ -222,7 +245,9 @@ export function VideoEmbed({
                 />
               </span>
               <span className="max-w-sm text-xs leading-5 text-white/65">
-                임베드가 제한될 수 있어요. 원본 링크에서 확인해 주세요.
+                {instagramUnavailable
+                  ? "이 Instagram 게시물은 외부 임베드를 허용하지 않습니다. Instagram에서 확인해 주세요."
+                  : "임베드가 제한될 수 있어요. 원본 링크에서 확인해 주세요."}
               </span>
             </a>
           )}

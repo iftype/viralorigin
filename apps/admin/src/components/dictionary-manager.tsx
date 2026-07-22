@@ -1,6 +1,6 @@
 "use client";
 
-const PUBLIC_WEB_BASE = "https://viralorigin.vercel.app";
+const PUBLIC_WEB_BASE = "https://viraltimes.vercel.app";
 
 import {
   Check,

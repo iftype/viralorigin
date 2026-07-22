@@ -43,8 +43,8 @@ export function MemeDetailHeader({ meme }: { meme: Meme }) {
         <h1 className="mt-5 text-5xl font-black leading-none tracking-[-0.065em] sm:text-7xl">{meme.title}</h1>
         <p className="mt-3 text-sm font-medium text-black/35">{aliases.join(" · ")}</p>
         <p className="sr-only">
-          {meme.title} 원본·원조를 확인하세요.
-          {aliases.length > 0 && ` ${aliases.slice(0, 4).map((alias) => `${alias} 원조`).join(", ")}로 검색되는 같은 밈·챌린지의 근거와 확산 과정도 함께 정리합니다.`}
+          {meme.title} {meme.kind === "challenge" ? "챌린지" : "밈"}의 원조, 처음 시작된 원본, 유래와 뜻을 확인하세요.
+          {aliases.length > 0 && ` ${aliases.slice(0, 4).join(", ")}으로도 불리며 근거와 확산 과정을 함께 정리합니다.`}
         </p>
       </div>
     </header>

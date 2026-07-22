@@ -34,7 +34,7 @@ Optional admin link enrichment uses `GEMMA_API_KEY`, `GEMMA_MODEL` and `METADATA
 
 ## Static admin deployment
 
-The admin build uses the `/viral` base path and is served as static files on the existing `iftype.store` Nginx server. It does not add another Node process. The `/viral/api/` location proxies only admin API calls to the ViralOrigin API domain.
+The admin build uses the `/viral` base path and is served as static files on the existing `iftype.store` Nginx server. It does not add another Node process. The `/viral/api/` location proxies only admin API calls to the ViralTimes API domain.
 
 Required secrets are `ADMIN_ORACLE_HOST`, `ADMIN_ORACLE_USER`, `ADMIN_ORACLE_SSH_KEY`, `ADMIN_ORACLE_SSH_PORT`, and `ADMIN_ORACLE_DEPLOY_PATH`. Enable the job with repository variable `ADMIN_DEPLOY_ENABLED=true`.
 

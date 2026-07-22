@@ -3,4 +3,4 @@ Allow: /
 Disallow: /feedback
 Disallow: /submit
 
-Sitemap: https://viralorigin.vercel.app/sitemap.xml
+Sitemap: https://viraltimes.vercel.app/sitemap.xml

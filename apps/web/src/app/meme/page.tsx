@@ -5,7 +5,7 @@ import { DynamicMemeDetail } from "@/features/meme-detail/components/dynamic-mem
 
 export const metadata: Metadata = {
   title: "사전 항목",
-  description: "ViralOrigin 사전 항목의 원본과 확산 과정을 확인하세요.",
+  description: "ViralTimes 사전 항목의 원본과 확산 과정을 확인하세요.",
 };
 
 export default function DynamicMemePage() {

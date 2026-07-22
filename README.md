@@ -1,4 +1,4 @@
-# ViralOrigin
+# ViralTimes
 
 밈·챌린지·인터넷 유행어의 원본 근거와 확산 과정을 함께 검증하는 참여형 사전입니다. 사전 데이터는 Oracle API가 소유하므로 관리자가 항목을 공개한 뒤 클라이언트를 다시 배포하지 않아도 즉시 반영됩니다.
 
@@ -6,8 +6,8 @@
 
 | 용도 | 주소 | 배포 기준 |
 | --- | --- | --- |
-| 운영 클라이언트 | https://viralorigin.vercel.app | `main` |
-| 개발 클라이언트 | https://viralorigin-git-develop-iftypes-projects.vercel.app | `develop` |
+| 운영 클라이언트 | https://viraltimes.vercel.app | `main` |
+| 개발 클라이언트 | https://viraltimes-git-develop-iftypes-projects.vercel.app | `develop` |
 | 관리자 | https://iftype.store/viral/ | `main` 정적 배포 |
 | API | https://meme.iftype.store/api/v1 | `main` Oracle 배포 |
 
@@ -125,7 +125,7 @@ import { Badge, Button, Card, Field, buttonClassName } from "@origin/ui";
 
 ## Copyright and privacy
 
-외부 게시물·영상·음원·이미지의 권리는 각 원저작자와 권리자에게 있습니다. ViralOrigin은 출처와 확산 맥락을 기록하며 권리 침해·삭제 요청은 사이트 문의 폼 또는 `iftype@naver.com`으로 받습니다.
+외부 게시물·영상·음원·이미지의 권리는 각 원저작자와 권리자에게 있습니다. ViralTimes는 출처와 확산 맥락을 기록하며 권리 침해·삭제 요청은 사이트 문의 폼 또는 `iftype@naver.com`으로 받습니다.
 
 개인정보처리방침은 `/privacy`에 공개되어 있습니다. 운영 클라이언트는 Vercel Web Analytics로 페이지 방문의 집계 정보만 확인하며 댓글·제보 본문이나 이메일을 분석 이벤트로 전송하지 않습니다.
 
@@ -133,7 +133,7 @@ import { Badge, Button, Card, Field, buttonClassName } from "@origin/ui";
 
 1. Clarity에서 프로젝트를 만든 뒤 Settings → Setup에서 Project ID를 확인합니다.
 2. Clarity 프로젝트의 Consent Mode를 켜고 strict masking 설정을 확인합니다.
-3. Vercel의 `viralorigin` 프로젝트에 `NEXT_PUBLIC_CLARITY_PROJECT_ID`를 등록합니다. 운영만 먼저 보려면 Production 환경에만 넣습니다.
+3. Vercel의 `viraltimes` 프로젝트에 `NEXT_PUBLIC_CLARITY_PROJECT_ID`를 등록합니다. 운영만 먼저 보려면 Production 환경에만 넣습니다.
 4. 재배포 뒤 동의 전에는 Clarity 스크립트와 `_clck`·`_clsk` 쿠키가 없고, 동의 뒤에만 `clarity.ms/tag/:id`가 로드되는지 확인합니다.
 
 환경값이 비어 있으면 관련 배너와 스크립트는 모두 빠집니다. Clarity 공식 정책상 18세 미만을 대상으로 하는 서비스에는 사용하면 안 되므로 실제 활성화 전에 서비스 대상 연령을 확인해야 합니다. 사용자 이름·이메일·퀴즈 session ID를 Clarity Identify API로 보내지 않습니다.

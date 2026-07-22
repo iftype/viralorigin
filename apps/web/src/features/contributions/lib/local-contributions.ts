@@ -7,7 +7,7 @@ export type ProposalSection =
 
 export type ProposalAction = { value: string; label: string };
 
-export const participationUpdateEvent = "viralorigin-participation-updated";
+export const participationUpdateEvent = "viraltimes-participation-updated";
 
 export const proposalSectionConfig: Record<
   ProposalSection,

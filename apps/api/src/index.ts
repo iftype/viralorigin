@@ -7,12 +7,14 @@ import { CategoryStore } from "./category-store.js";
 import { MemeStore } from "./meme-store.js";
 import { MemePulseStore } from "./meme-pulse-store.js";
 import { MetadataSuggestionService } from "./metadata-suggestion.js";
+import { InstagramEmbedAvailability } from "./instagram-embed.js";
 import { ParticipationStore } from "./participation-store.js";
 import { TrendStore } from "./trend-store.js";
 import { QuizStore } from "./quiz-store.js";
 import { registerAdminRoutes } from "./routes/admin.js";
 import { registerCategoryRoutes } from "./routes/categories.js";
 import { registerHealthRoutes } from "./routes/health.js";
+import { registerEmbedRoutes } from "./routes/embeds.js";
 import { registerIntakeRoutes } from "./routes/intake.js";
 import { registerMemeRoutes } from "./routes/memes.js";
 import { registerMemePulseRoutes } from "./routes/meme-pulse.js";
@@ -58,6 +60,7 @@ const metadataSuggestionService = new MetadataSuggestionService(
   process.env.GEMMA_MODEL ?? "gemma-4-26b-a4b-it",
   process.env.METADATA_ALLOWED_HOSTS ?? "",
 );
+const instagramEmbeds = new InstagramEmbedAvailability();
 
 await app.register(cors, {
   origin:
@@ -67,6 +70,7 @@ await app.register(cors, {
 });
 
 registerHealthRoutes(app);
+registerEmbedRoutes(app, instagramEmbeds);
 registerCategoryRoutes(app, categoryStore);
 registerMemeRoutes(app, memeStore, categoryStore, participationStore);
 registerMemePulseRoutes(app, memeStore, pulseStore);

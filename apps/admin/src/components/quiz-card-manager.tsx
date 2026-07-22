@@ -59,7 +59,7 @@ export function QuizCardManager({ items, memes, onChange }: { items: QuizCardCon
             <span>사전 항목</span>
             {memes.find((m) => m.id === card.memeId)?.slug && (
               <a
-                href={`https://viralorigin.vercel.app/memes/${memes.find((m) => m.id === card.memeId)?.slug}`}
+                href={`https://viraltimes.vercel.app/memes/${memes.find((m) => m.id === card.memeId)?.slug}`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-[0.68rem] font-bold text-black/60 hover:text-black"

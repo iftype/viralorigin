@@ -1,4 +1,4 @@
-# ViralOrigin agent guide
+# ViralTimes agent guide
 
 이 문서는 Codex 외 다른 AI·개발자가 같은 기준으로 작업하기 위한 저장소 운영 계약이다.
 
