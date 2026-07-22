@@ -12,6 +12,7 @@ import {
   getYouTubeVideoId,
   platformLabels,
 } from "../lib/video-url";
+import { loadYouTubeIframeApi, type YouTubePlayer } from "../lib/youtube-player-api";
 
 type VideoEmbedProps = {
   video: Video;
@@ -34,10 +35,22 @@ export function VideoEmbed({
 }: VideoEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const youtubePlayerRef = useRef<YouTubePlayer | null>(null);
+  const isMutedRef = useRef(isMuted);
+  const autoPlayRef = useRef(autoPlayOnScroll);
+  const onEmbedUnavailableRef = useRef(onEmbedUnavailable);
   const unavailableReportedRef = useRef(false);
+  const [embedLoaded, setEmbedLoaded] = useState(false);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [instagramAvailable, setInstagramAvailable] = useState<boolean | null>(
     video.platform === "instagram" ? null : true,
   );
+
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+    autoPlayRef.current = autoPlayOnScroll;
+    onEmbedUnavailableRef.current = onEmbedUnavailable;
+  }, [autoPlayOnScroll, isMuted, onEmbedUnavailable]);
 
   useEffect(() => {
     if (video.platform !== "instagram") return;
@@ -66,8 +79,8 @@ export function VideoEmbed({
   const reportUnavailable = useCallback(() => {
     if (unavailableReportedRef.current) return;
     unavailableReportedRef.current = true;
-    onEmbedUnavailable?.();
-  }, [onEmbedUnavailable]);
+    onEmbedUnavailableRef.current?.();
+  }, []);
 
   useEffect(() => {
     if (instagramAvailable === false) reportUnavailable();
@@ -76,10 +89,11 @@ export function VideoEmbed({
   const youtubeId =
     video.platform === "youtube" ? getYouTubeVideoId(video.url) : null;
 
-  // YouTube iframe 재생 URL (autoplay=1, mute=1 및 playsinline=1 파라미터 추가)
+  // 모바일 autoplay 정책을 통과하도록 새 player는 항상 muted 상태로 시작한다.
+  // 사용자가 소리를 켠 상태는 iframe 준비 뒤 postMessage로 복원한다.
   const embedUrl =
     video.platform === "youtube" && youtubeId
-      ? `https://www.youtube-nocookie.com/embed/${youtubeId}?enablejsapi=1&autoplay=${autoPlayOnScroll ? 1 : 0}&mute=${isMuted ? 1 : 0}&playsinline=1&controls=1`
+      ? `https://www.youtube-nocookie.com/embed/${youtubeId}?enablejsapi=1&autoplay=${autoPlayOnScroll ? 1 : 0}&mute=1&playsinline=1&controls=1`
       : video.platform === "instagram"
         ? getInstagramEmbedUrl(video.url)
         : video.platform === "tiktok"
@@ -97,22 +111,78 @@ export function VideoEmbed({
   const isShortForm =
     ["instagram", "tiktok"].includes(video.platform) || Boolean(imageUrl);
 
-  // 음소거 상태가 상위에서 변경될 때 iframe에 postMessage로 무음/소리 전송
+  // 준비된 YouTube player에는 API로 즉시 소리 상태를 적용한다.
   useEffect(() => {
-    if (!iframeRef.current?.contentWindow) return;
-    if (video.platform === "youtube") {
-      const command = isMuted ? "mute" : "unMute";
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({ event: "command", func: command, args: [] }),
-        "*"
-      );
-    } else if (video.platform === "tiktok") {
-      iframeRef.current.contentWindow.postMessage(
-        { type: isMuted ? "mute" : "unMute", "x-tiktok-player": true },
-        "*",
-      );
+    if (video.platform === "youtube" && youtubePlayerRef.current) {
+      if (isMuted) youtubePlayerRef.current.mute();
+      else youtubePlayerRef.current.unMute();
+      return;
     }
-  }, [isMuted, video.platform]);
+    const playerWindow = iframeRef.current?.contentWindow;
+    if (!embedLoaded || !playerWindow || video.platform !== "tiktok") return;
+    const syncAudio = () => {
+      playerWindow.postMessage(
+        { type: isMuted ? "mute" : "unMute", "x-tiktok-player": true },
+        "https://www.tiktok.com",
+      );
+    };
+    syncAudio();
+    const timers = [250, 750, 1_500].map((delay) => setTimeout(syncAudio, delay));
+    return () => timers.forEach(clearTimeout);
+  }, [embedLoaded, isMuted, video.platform]);
+
+  // YouTube 공식 IFrame API의 onReady에서 재생해야 모바일의 느린 player 준비에도 명령이 유실되지 않는다.
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!canEmbed || !embedLoaded || video.platform !== "youtube" || !iframe) return;
+    let disposed = false;
+    let player: YouTubePlayer | null = null;
+
+    void loadYouTubeIframeApi()
+      .then((youtube) => {
+        if (disposed) return;
+        player = new youtube.Player(iframe, {
+          events: {
+            onReady: (event) => {
+              if (disposed) return;
+              youtubePlayerRef.current = event.target;
+              event.target.mute();
+              if (autoPlayRef.current) event.target.playVideo();
+              else event.target.pauseVideo();
+              if (!isMutedRef.current) event.target.unMute();
+            },
+            onStateChange: (event) => {
+              if (!disposed && event.data === 1) setAutoplayBlocked(false);
+            },
+            onAutoplayBlocked: () => {
+              if (!disposed) setAutoplayBlocked(true);
+            },
+            onError: () => {
+              if (!disposed) reportUnavailable();
+            },
+          },
+        });
+      })
+      .catch(() => {
+        if (!disposed) setAutoplayBlocked(true);
+      });
+
+    return () => {
+      disposed = true;
+      if (player && youtubePlayerRef.current === player) {
+        player.pauseVideo();
+        player.destroy();
+        youtubePlayerRef.current = null;
+      }
+    };
+  }, [canEmbed, embedLoaded, reportUnavailable, video.platform]);
+
+  useEffect(() => {
+    const player = youtubePlayerRef.current;
+    if (video.platform !== "youtube" || !player) return;
+    if (autoPlayOnScroll) player.playVideo();
+    else player.pauseVideo();
+  }, [autoPlayOnScroll, video.platform]);
 
   useEffect(() => {
     if (video.platform !== "tiktok") return;
@@ -140,51 +210,25 @@ export function VideoEmbed({
     return () => window.removeEventListener("message", handlePlayerMessage);
   }, [autoPlayOnScroll, isMuted, reportUnavailable, video.platform]);
 
-  // active 상태 및 IntersectionObserver에 의한 자동재생 확정 트리거 (3단계 재시도로 끊김 100% 방지)
-  useEffect(() => {
-    if (!canEmbed || video.platform !== "youtube") return;
-    const playerWindow = iframeRef.current?.contentWindow;
-    if (!playerWindow) return;
-
-    const triggerPlay = () => {
-      const command = autoPlayOnScroll ? "playVideo" : "pauseVideo";
-      playerWindow.postMessage(
-        JSON.stringify({ event: "command", func: command, args: [] }),
-        "*"
-      );
-    };
-
-    if (autoPlayOnScroll) {
-      triggerPlay();
-      const t1 = setTimeout(triggerPlay, 100);
-      const t2 = setTimeout(triggerPlay, 350);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        playerWindow.postMessage(
-          JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
-          "*",
-        );
-      };
-    } else {
-      triggerPlay();
-    }
-  }, [autoPlayOnScroll, canEmbed, video.platform]);
-
   useEffect(() => {
     const playerWindow = iframeRef.current?.contentWindow;
-    if (!canEmbed || video.platform !== "tiktok" || !playerWindow) return;
-    playerWindow.postMessage(
+    if (!canEmbed || !embedLoaded || video.platform !== "tiktok" || !playerWindow) return;
+    const syncPlayback = () => playerWindow.postMessage(
       { type: autoPlayOnScroll ? "play" : "pause", "x-tiktok-player": true },
       "https://www.tiktok.com",
     );
+    syncPlayback();
+    const timers = autoPlayOnScroll
+      ? [250, 750, 1_500, 3_000].map((delay) => setTimeout(syncPlayback, delay))
+      : [];
     return () => {
+      timers.forEach(clearTimeout);
       playerWindow.postMessage(
         { type: "pause", "x-tiktok-player": true },
         "https://www.tiktok.com",
       );
     };
-  }, [autoPlayOnScroll, canEmbed, video.platform]);
+  }, [autoPlayOnScroll, canEmbed, embedLoaded, video.platform]);
 
   return (
     <article
@@ -217,6 +261,7 @@ export function VideoEmbed({
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 loading="eager"
+                onLoad={() => setEmbedLoaded(true)}
                 onError={reportUnavailable}
               />
               {feedMode && video.platform === "youtube" && (
@@ -224,6 +269,22 @@ export function VideoEmbed({
                   aria-hidden="true"
                   className="absolute inset-0 z-10 touch-pan-y md:hidden"
                 />
+              )}
+              {feedMode && video.platform === "youtube" && autoplayBlocked && (
+                <button
+                  className="absolute left-1/2 top-1/2 z-30 flex -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-black text-black shadow-xl"
+                  onClick={() => {
+                    const player = youtubePlayerRef.current;
+                    if (!player) return;
+                    player.mute();
+                    player.playVideo();
+                    if (!isMutedRef.current) player.unMute();
+                    setAutoplayBlocked(false);
+                  }}
+                  type="button"
+                >
+                  <Play className="size-4 fill-current" aria-hidden="true" /> 재생하기
+                </button>
               )}
               {feedMode && ["instagram", "tiktok"].includes(video.platform) && (
                 <>
