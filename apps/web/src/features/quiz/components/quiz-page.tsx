@@ -235,10 +235,28 @@ export function QuizPage() {
       {!cardsCompleted ? (
         <div className="flex min-h-0 w-full max-w-md flex-1 flex-col items-center gap-2">
           <div className="w-full shrink-0 space-y-1 text-center">
-            <h1 className="flex items-center justify-center gap-2 text-lg font-black tracking-tight text-neutral-900">
-              <ArrowLeftRight className="text-[var(--vo-color-brand)]" size={20} />
-              밈 인지도 매치 테스트
-            </h1>
+            <div className="flex items-center justify-between gap-2">
+              <h1 className="flex min-w-0 items-center gap-2 text-left text-lg font-black tracking-tight text-neutral-900">
+                <ArrowLeftRight className="shrink-0 text-[var(--vo-color-brand)]" size={20} />
+                <span>밈 인지도 매치 테스트</span>
+              </h1>
+              <Link
+                aria-label="ViralTimes 서비스로 바로가기"
+                className="flex shrink-0 items-center gap-1 rounded-full bg-black/5 px-2.5 py-1.5 text-[0.65rem] font-black text-black/55 transition hover:bg-black hover:text-white"
+                href="/"
+                title="서비스로 바로가기"
+                onClick={() => void postLog({
+                  cardId: "home",
+                  cardType: cards[0]?.type ?? "origin",
+                  response: "open_service",
+                  runId,
+                  step: currentIndex,
+                  destination: "/",
+                })}
+              >
+                서비스 바로가기 <ArrowUpRight className="size-3" aria-hidden="true" />
+              </Link>
+            </div>
             <p className="text-xs font-medium text-neutral-500">
               영상을 카드 안에서 확인하고, 알면 오른쪽·모르면 왼쪽으로 넘겨주세요.
             </p>
