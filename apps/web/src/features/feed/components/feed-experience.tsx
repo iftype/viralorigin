@@ -158,6 +158,17 @@ export function FeedExperience() {
     }
   }, [activeIndex]);
 
+  const skipUnavailableFeedItem = useCallback((itemId: string, itemIndex: number) => {
+    rawFeedItemsRef.current = rawFeedItemsRef.current.filter((item) => item.id !== itemId);
+    const nextItems = feedItems.filter((item) => item.id !== itemId);
+    setFeedItems(nextItems);
+    setActiveIndex((current) => {
+      const removedBefore = feedItems.slice(0, current).filter((item) => item.id === itemId).length;
+      const adjusted = itemIndex < current ? current - removedBefore : current;
+      return Math.min(Math.max(0, adjusted), Math.max(0, nextItems.length - 1));
+    });
+  }, [feedItems]);
+
   return (
     <div className="relative h-[calc(100dvh-3.5rem)] w-full overflow-hidden bg-black text-white">
       {loading ? (
@@ -207,6 +218,7 @@ export function FeedExperience() {
                       feedMode={true}
                       isMuted={globalMuted}
                       onToggleMute={() => setGlobalMuted((prev) => !prev)}
+                      onEmbedUnavailable={() => skipUnavailableFeedItem(id, index)}
                     />
                   ) : (
                     <div className="relative size-full bg-zinc-950 flex flex-col items-center justify-center text-white/20">

@@ -11,6 +11,7 @@ import type { MetadataSuggestionService } from "../metadata-suggestion.js";
 import { parseMemeInput } from "../meme-validation.js";
 import { publicationStatuses, type PublicationStatus } from "../meme-types.js";
 import type { QuizStore } from "../quiz-store.js";
+import type { QuizSurveyQuestion } from "../quiz-types.js";
 
 export function registerAdminRoutes(
   app: FastifyInstance,
@@ -290,7 +291,12 @@ export function registerAdminRoutes(
     { preHandler: requireAdmin },
     async (request, reply) => {
       reply.header("Cache-Control", "no-store");
-      return { items: await quizStore.getLogs() };
+      const [items, surveyAnswers, surveyQuestions] = await Promise.all([
+        quizStore.getLogs(),
+        quizStore.getSurveyAnswers(),
+        quizStore.getSurveyQuestions(),
+      ]);
+      return { items, surveyAnswers, surveyQuestions };
     },
   );
 
@@ -343,6 +349,63 @@ export function registerAdminRoutes(
       });
       if (cards.length !== rawCards.length) return reply.code(400).send({ error: "중복되지 않은 공개 밈과 분야를 선택해 주세요." });
       return { items: await quizStore.replaceCards(cards) };
+    },
+  );
+
+  app.get(
+    "/api/v1/admin/quiz/survey-questions",
+    { preHandler: requireAdmin },
+    async (_request, reply) => {
+      reply.header("Cache-Control", "no-store");
+      return { items: await quizStore.getSurveyQuestions() };
+    },
+  );
+
+  app.put(
+    "/api/v1/admin/quiz/survey-questions",
+    { preHandler: requireAdmin },
+    async (request, reply) => {
+      if (!hasTrustedOrigin(request.headers.origin)) return reply.code(403).send({ error: "허용되지 않은 요청입니다." });
+      const rawQuestions = (request.body as { items?: unknown } | null)?.items;
+      if (!Array.isArray(rawQuestions) || rawQuestions.length > 5) {
+        return reply.code(400).send({ error: "추가 설문은 최대 5개까지 설정할 수 있습니다." });
+      }
+      const now = new Date().toISOString();
+      const usedQuestionIds = new Set<string>();
+      const usedOptionIds = new Set<string>();
+      const questions: QuizSurveyQuestion[] = [];
+      for (const [questionIndex, rawQuestion] of rawQuestions.entries()) {
+        if (!rawQuestion || typeof rawQuestion !== "object") return reply.code(400).send({ error: "설문 문항을 확인해 주세요." });
+        const entry = rawQuestion as Record<string, unknown>;
+        const prompt = typeof entry.prompt === "string" ? entry.prompt.trim() : "";
+        const rawOptions = entry.options;
+        if (prompt.length < 3 || prompt.length > 160 || !Array.isArray(rawOptions) || rawOptions.length < 2 || rawOptions.length > 6) {
+          return reply.code(400).send({ error: "문항은 3~160자, 선택지는 2~6개로 입력해 주세요." });
+        }
+        let questionId = typeof entry.id === "string" ? entry.id.trim().slice(0, 120) : "";
+        if (!questionId || usedQuestionIds.has(questionId)) questionId = randomUUID();
+        usedQuestionIds.add(questionId);
+        const options = [];
+        for (const rawOption of rawOptions) {
+          if (!rawOption || typeof rawOption !== "object") return reply.code(400).send({ error: "선택지를 확인해 주세요." });
+          const optionEntry = rawOption as Record<string, unknown>;
+          const label = typeof optionEntry.label === "string" ? optionEntry.label.trim() : "";
+          if (!label || label.length > 80) return reply.code(400).send({ error: "선택지는 1~80자로 입력해 주세요." });
+          let optionId = typeof optionEntry.id === "string" ? optionEntry.id.trim().slice(0, 120) : "";
+          if (!optionId || usedOptionIds.has(optionId)) optionId = randomUUID();
+          usedOptionIds.add(optionId);
+          options.push({ id: optionId, label });
+        }
+        questions.push({
+          id: questionId,
+          prompt,
+          required: entry.required === true,
+          sortOrder: questionIndex,
+          updatedAt: now,
+          options,
+        });
+      }
+      return { items: await quizStore.replaceSurveyQuestions(questions) };
     },
   );
 }

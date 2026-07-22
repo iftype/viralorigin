@@ -38,6 +38,13 @@ interface QuizTypeStats {
   feedbackTotal: number;
 }
 
+interface QuizSurveyQuestion {
+  id: string;
+  prompt: string;
+  required: boolean;
+  options: { id: string; label: string }[];
+}
+
 interface StatsData {
   totalLogs: number;
   stats: { minor: QuizTypeStats; origin: QuizTypeStats };
@@ -60,6 +67,8 @@ export function QuizPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [statsError, setStatsError] = useState(false);
   const [runId, setRunId] = useState("");
+  const [surveyQuestions, setSurveyQuestions] = useState<QuizSurveyQuestion[]>([]);
+  const [surveyIndex, setSurveyIndex] = useState(0);
   const [showSwipeHint, setShowSwipeHint] = useState(true);
   const completedRuns = useRef(new Set<string>());
 
@@ -84,10 +93,12 @@ export function QuizPage() {
     try {
       const response = await fetch("/api/v1/quiz/cards", { cache: "no-store" });
       if (!response.ok) throw new Error("퀴즈 카드를 불러오지 못했습니다.");
-      const data = (await response.json()) as { cards?: QuizCardData[] };
+      const data = (await response.json()) as { cards?: QuizCardData[]; surveyQuestions?: QuizSurveyQuestion[] };
       const fetchedCards = Array.isArray(data.cards) ? data.cards : [];
       const nextRunId = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `quiz-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       setCards(fetchedCards);
+      setSurveyQuestions(Array.isArray(data.surveyQuestions) ? data.surveyQuestions : []);
+      setSurveyIndex(0);
       setRunId(nextRunId);
       setCurrentIndex(0);
       setResponses({});
@@ -95,6 +106,7 @@ export function QuizPage() {
       if (fetchedCards[0]) void postLog({ cardId: "quiz", cardType: fetchedCards[0].type, response: "start", runId: nextRunId, step: 0 });
     } catch (cause) {
       setCards([]);
+      setSurveyQuestions([]);
       setError(cause instanceof Error ? cause.message : "퀴즈 카드를 불러오지 못했습니다.");
     } finally {
       setLoading(false);
@@ -128,14 +140,38 @@ export function QuizPage() {
     }
   }, []);
 
+  const answerSurvey = useCallback(async (question: QuizSurveyQuestion, optionId?: string) => {
+    if (optionId) {
+      try {
+        await fetch("/api/v1/quiz/survey-answer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: getOrCreateSessionId(),
+            runId,
+            questionId: question.id,
+            optionId,
+          }),
+          keepalive: true,
+        });
+      } catch {
+        // 추가 설문 저장 실패가 결과 화면 진입을 막지 않게 한다.
+      }
+    }
+    setSurveyIndex((current) => current + 1);
+  }, [runId]);
+
+  const cardsCompleted = cards.length > 0 && currentIndex >= cards.length;
+  const completed = cardsCompleted && surveyIndex >= surveyQuestions.length;
+
   useEffect(() => {
-    if (cards.length > 0 && currentIndex >= cards.length && runId && !completedRuns.current.has(runId)) {
+    if (completed && runId && !completedRuns.current.has(runId)) {
       completedRuns.current.add(runId);
       void postLog({ cardId: "quiz", cardType: cards[0]?.type ?? "origin", response: "complete", runId, step: cards.length });
       const timer = window.setTimeout(() => void fetchStats(), 350);
       return () => window.clearTimeout(timer);
     }
-  }, [cards, currentIndex, fetchStats, postLog, runId]);
+  }, [cards, completed, fetchStats, postLog, runId]);
 
   const personal = useMemo(() => {
     const build = (type: QuizCardData["type"]) => {
@@ -169,8 +205,6 @@ export function QuizPage() {
       />
     );
   }
-
-  const completed = currentIndex >= cards.length;
 
   return (
     <div className="flex h-[100dvh] w-full touch-none flex-col items-center overflow-hidden overscroll-none px-3 py-3 sm:page-shell sm:min-h-[80vh] sm:h-auto sm:touch-auto sm:overflow-visible sm:py-8">
@@ -221,6 +255,42 @@ export function QuizPage() {
               알아요 (KNOW)
             </button>
           </div>
+        </div>
+      ) : !completed ? (
+        <div className="flex min-h-0 w-full max-w-md flex-1 flex-col justify-center gap-5 sm:flex-none">
+          <div className="space-y-2 text-center">
+            <p className="text-xs font-black tracking-[0.14em] text-[var(--vo-color-brand)]">EXTRA SURVEY</p>
+            <h1 className="text-2xl font-black tracking-tight">한 가지만 더 알려주세요</h1>
+            <p className="text-xs text-neutral-500">운영자가 추가한 간단한 설문입니다.</p>
+            <div className="mx-auto mt-3 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
+              <div className="h-full bg-[var(--vo-color-brand)] transition-all" style={{ width: `${percentage(surveyIndex + 1, surveyQuestions.length)}%` }} />
+            </div>
+          </div>
+          {surveyQuestions[surveyIndex] && (
+            <Card className="space-y-4 border border-black/5 p-5 shadow-lg sm:p-7">
+              <div>
+                <p className="text-xs font-bold text-neutral-400">{surveyIndex + 1} / {surveyQuestions.length}</p>
+                <h2 className="mt-2 text-lg font-black leading-snug">{surveyQuestions[surveyIndex].prompt}</h2>
+              </div>
+              <div className="grid gap-2">
+                {surveyQuestions[surveyIndex].options.map((option) => (
+                  <button
+                    className="cursor-pointer rounded-xl border border-black/5 bg-neutral-50 px-4 py-3 text-left text-sm font-bold transition hover:border-[var(--vo-color-brand)] hover:bg-white"
+                    key={option.id}
+                    onClick={() => void answerSurvey(surveyQuestions[surveyIndex], option.id)}
+                    type="button"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {!surveyQuestions[surveyIndex].required && (
+                <button className="w-full cursor-pointer py-1 text-xs font-bold text-neutral-400 hover:text-neutral-700" onClick={() => void answerSurvey(surveyQuestions[surveyIndex])} type="button">
+                  건너뛰기
+                </button>
+              )}
+            </Card>
+          )}
         </div>
       ) : (
         <div className="flex min-h-0 w-full max-w-2xl flex-1 flex-col justify-center gap-2 sm:flex-none sm:gap-6">

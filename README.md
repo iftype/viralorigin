@@ -142,7 +142,7 @@ import { Badge, Button, Card, Field, buttonClassName } from "@origin/ui";
 
 - 공개 상세 canonical URL은 `/memes/:slug`다. Vercel이 정적 `/meme` shell로 rewrite한다.
 - 상세를 불러온 뒤 제목·별칭의 `원본`, `원조`, `챌린지 원조` 조합을 문서 title, description, canonical, Open Graph와 JSON-LD에 반영한다.
-- `/sitemap.xml`은 Oracle API의 현재 published 사전을 사용하므로 새 항목 공개 뒤 web 재배포가 필요 없다.
+- `/sitemap.xml`은 Vercel 웹 앱이 Oracle API의 현재 published 사전을 5분 단위로 읽어 직접 생성하므로 외부 rewrite 실패에 영향을 받지 않는다.
 - `/robots.txt`는 제보·피드백 폼을 제외하고 공개 사전의 수집을 허용한다.
 
 ## Documentation order for contributors and AI agents

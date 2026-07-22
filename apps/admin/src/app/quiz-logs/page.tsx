@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { LoaderCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { QuizLogManager, type QuizLog } from "@/components/quiz-log-manager";
+import { QuizLogManager, type QuizLog, type QuizSurveyAnswer } from "@/components/quiz-log-manager";
+import type { QuizSurveyQuestion } from "@/components/quiz-survey-manager";
 import type { AdminMeme } from "@/components/dictionary-manager";
 
 const apiBase = "/viral/api/v1";
@@ -12,6 +13,8 @@ export default function QuizLogsPage() {
   const { setAuthenticated } = useAuth();
   const [quizLogs, setQuizLogs] = useState<QuizLog[]>([]);
   const [memes, setMemes] = useState<AdminMeme[]>([]);
+  const [surveyAnswers, setSurveyAnswers] = useState<QuizSurveyAnswer[]>([]);
+  const [surveyQuestions, setSurveyQuestions] = useState<QuizSurveyQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -32,10 +35,12 @@ export default function QuizLogsPage() {
       if (!logsResponse.ok) throw new Error("퀴즈 로그 데이터를 불러오지 못했습니다.");
       if (!memeResponse.ok) throw new Error("사전 데이터를 불러오지 못했습니다.");
 
-      const logsData = (await logsResponse.json()) as { items: QuizLog[] };
+      const logsData = (await logsResponse.json()) as { items: QuizLog[]; surveyAnswers?: QuizSurveyAnswer[]; surveyQuestions?: QuizSurveyQuestion[] };
       const memeData = (await memeResponse.json()) as { items: AdminMeme[] };
 
       setQuizLogs(logsData.items || []);
+      setSurveyAnswers(logsData.surveyAnswers || []);
+      setSurveyQuestions(logsData.surveyQuestions || []);
       setMemes(memeData.items || []);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "데이터를 불러오지 못했습니다.");
@@ -73,7 +78,7 @@ export default function QuizLogsPage() {
         </div>
       )}
 
-      <QuizLogManager logs={quizLogs} memes={memes} onChange={setQuizLogs} />
+      <QuizLogManager logs={quizLogs} surveyAnswers={surveyAnswers} surveyQuestions={surveyQuestions} memes={memes} onChange={setQuizLogs} onSurveyAnswersChange={setSurveyAnswers} />
     </div>
   );
 }

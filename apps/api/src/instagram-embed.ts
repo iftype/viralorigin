@@ -2,7 +2,11 @@ const cacheTtlMs = 15 * 60 * 1000;
 const maxCacheEntries = 200;
 const maxHtmlBytes = 256_000;
 
-type EmbedCheck = { available: boolean; checkedAt: string };
+type EmbedCheck = {
+  available: boolean | null;
+  checkedAt: string;
+  reason?: "removed" | "unreachable" | "unrecognized";
+};
 
 function parseInstagramEmbedUrl(value: string) {
   let url: URL;
@@ -52,7 +56,8 @@ export class InstagramEmbedAvailability {
     const cached = this.cache.get(embedUrl);
     if (cached && cached.expiresAt > Date.now()) return cached.result;
 
-    let available = false;
+    let available: boolean | null = null;
+    let reason: EmbedCheck["reason"] = "unreachable";
     try {
       const response = await fetch(embedUrl, {
         headers: {
@@ -66,12 +71,24 @@ export class InstagramEmbedAvailability {
         || html.includes("The link to this photo or video may be broken")
         || html.includes("사진 또는 동영상의 링크가 잘못되었거나 게시물이 삭제되었습니다");
       const hasEmbeddedMedia = /EmbeddedMedia|shortcode_media|video_url|display_url/.test(html);
-      available = response.ok && !isBroken && hasEmbeddedMedia;
+      if (response.ok && isBroken) {
+        available = false;
+        reason = "removed";
+      } else if (response.ok && hasEmbeddedMedia) {
+        available = true;
+        reason = undefined;
+      } else {
+        // Meta가 데이터센터 IP를 제한하거나 응답 형식을 바꾼 경우에는 게시물 삭제로
+        // 단정하지 않는다. 브라우저에서 실제 임베드를 먼저 시도하게 둔다.
+        available = null;
+        reason = response.ok ? "unrecognized" : "unreachable";
+      }
     } catch {
-      available = false;
+      available = null;
+      reason = "unreachable";
     }
 
-    const result = { available, checkedAt: new Date().toISOString() };
+    const result = { available, checkedAt: new Date().toISOString(), ...(reason ? { reason } : {}) };
     this.cache.set(embedUrl, { result, expiresAt: Date.now() + cacheTtlMs });
     if (this.cache.size > maxCacheEntries) {
       const oldest = this.cache.keys().next().value;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ExternalLink, Play, Volume2, VolumeX, ShieldAlert } from "lucide-react";
 import Image from "next/image";
 
@@ -20,6 +20,7 @@ type VideoEmbedProps = {
   feedMode?: boolean;
   isMuted?: boolean;
   onToggleMute?: () => void;
+  onEmbedUnavailable?: () => void;
 };
 
 export function VideoEmbed({
@@ -29,9 +30,11 @@ export function VideoEmbed({
   feedMode = false,
   isMuted = true,
   onToggleMute,
+  onEmbedUnavailable,
 }: VideoEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const unavailableReportedRef = useRef(false);
   const [instagramAvailable, setInstagramAvailable] = useState<boolean | null>(
     video.platform === "instagram" ? null : true,
   );
@@ -41,19 +44,34 @@ export function VideoEmbed({
     let active = true;
     void fetch(`/api/v1/embeds/instagram?url=${encodeURIComponent(video.url)}`)
       .then(async (response) => {
-        if (!response.ok) return false;
-        return ((await response.json()) as { available?: boolean }).available === true;
+        if (!response.ok) return null;
+        const result = (await response.json()) as { available?: boolean | null };
+        return typeof result.available === "boolean" ? result.available : null;
       })
       .then((available) => {
         if (active) setInstagramAvailable(available);
       })
       .catch(() => {
-        if (active) setInstagramAvailable(false);
+        if (active) setInstagramAvailable(null);
       });
     return () => {
       active = false;
     };
   }, [video.platform, video.url]);
+
+  useEffect(() => {
+    unavailableReportedRef.current = false;
+  }, [video.id, video.url]);
+
+  const reportUnavailable = useCallback(() => {
+    if (unavailableReportedRef.current) return;
+    unavailableReportedRef.current = true;
+    onEmbedUnavailable?.();
+  }, [onEmbedUnavailable]);
+
+  useEffect(() => {
+    if (instagramAvailable === false) reportUnavailable();
+  }, [instagramAvailable, reportUnavailable]);
 
   const youtubeId =
     video.platform === "youtube" ? getYouTubeVideoId(video.url) : null;
@@ -68,7 +86,7 @@ export function VideoEmbed({
           ? getTikTokEmbedUrl(video.url)
           : null;
 
-  const canEmbed = Boolean(embedUrl) && (video.platform !== "instagram" || instagramAvailable === true);
+  const canEmbed = Boolean(embedUrl) && (video.platform !== "instagram" || instagramAvailable !== false);
   const instagramUnavailable = video.platform === "instagram" && instagramAvailable === false;
   const imageUrl = video.thumbnailUrl
     ? video.thumbnailUrl.startsWith("/")
@@ -101,7 +119,12 @@ export function VideoEmbed({
     const handlePlayerMessage = (event: MessageEvent) => {
       if (event.origin !== "https://www.tiktok.com" || event.source !== iframeRef.current?.contentWindow) return;
       const message = event.data as { type?: string; "x-tiktok-player"?: boolean } | null;
-      if (!message?.["x-tiktok-player"] || message.type !== "onPlayerReady") return;
+      if (!message?.["x-tiktok-player"]) return;
+      if (message.type === "onPlayerError") {
+        reportUnavailable();
+        return;
+      }
+      if (message.type !== "onPlayerReady") return;
       iframeRef.current?.contentWindow?.postMessage(
         { type: isMuted ? "mute" : "unMute", "x-tiktok-player": true },
         "https://www.tiktok.com",
@@ -115,7 +138,7 @@ export function VideoEmbed({
     };
     window.addEventListener("message", handlePlayerMessage);
     return () => window.removeEventListener("message", handlePlayerMessage);
-  }, [autoPlayOnScroll, isMuted, video.platform]);
+  }, [autoPlayOnScroll, isMuted, reportUnavailable, video.platform]);
 
   // active 상태 및 IntersectionObserver에 의한 자동재생 확정 트리거 (3단계 재시도로 끊김 100% 방지)
   useEffect(() => {
@@ -173,16 +196,17 @@ export function VideoEmbed({
                 }`
           }
         >
-          {embedUrl ? (
+          {canEmbed ? (
             <>
               <iframe
                 ref={iframeRef}
                 className="absolute inset-0 size-full border-0"
-                src={embedUrl}
+                src={embedUrl ?? undefined}
                 title={video.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 loading="eager"
+                onError={reportUnavailable}
               />
               {feedMode && video.platform === "youtube" && (
                 <div

@@ -26,7 +26,11 @@ export function registerQuizRoutes(
 ) {
   app.get("/api/v1/quiz/cards", async (_request, reply) => {
     reply.header("Cache-Control", "no-store");
-    const [memes, configuredCards] = await Promise.all([memeStore.list(), quizStore.getCards()]);
+    const [memes, configuredCards, surveyQuestions] = await Promise.all([
+      memeStore.list(),
+      quizStore.getCards(),
+      quizStore.getSurveyQuestions(),
+    ]);
     const memeById = new Map(memes.map((meme) => [meme.id, meme]));
     const toCard = (meme: (typeof memes)[number], field?: string): QuizCard => ({
       id: meme.id,
@@ -67,7 +71,38 @@ export function registerQuizRoutes(
         [cards[index], cards[target]] = [cards[target], cards[index]];
       }
     }
-    return { cards: cards.slice(0, 5) };
+    return { cards: cards.slice(0, 5), surveyQuestions };
+  });
+
+  app.post("/api/v1/quiz/survey-answer", async (request, reply) => {
+    const body = request.body as {
+      sessionId?: unknown;
+      runId?: unknown;
+      questionId?: unknown;
+      optionId?: unknown;
+    } | null;
+    if (
+      typeof body?.sessionId !== "string" || body.sessionId.length < 8 || body.sessionId.length > 120 ||
+      typeof body.runId !== "string" || body.runId.length < 8 || body.runId.length > 120 ||
+      typeof body.questionId !== "string" || body.questionId.length < 1 || body.questionId.length > 120 ||
+      typeof body.optionId !== "string" || body.optionId.length < 1 || body.optionId.length > 120
+    ) {
+      return reply.code(400).send({ error: "잘못된 설문 응답 형식입니다." });
+    }
+    const question = (await quizStore.getSurveyQuestions()).find((item) => item.id === body.questionId);
+    const option = question?.options.find((item) => item.id === body.optionId);
+    if (!question || !option) return reply.code(400).send({ error: "현재 설문에 없는 응답입니다." });
+    await quizStore.addSurveyAnswer({
+      id: randomUUID(),
+      sessionId: body.sessionId,
+      runId: body.runId,
+      questionId: question.id,
+      optionId: option.id,
+      questionPrompt: question.prompt,
+      optionLabel: option.label,
+      timestamp: new Date().toISOString(),
+    });
+    return { success: true };
   });
 
   app.post("/api/v1/quiz/log", async (request, reply) => {

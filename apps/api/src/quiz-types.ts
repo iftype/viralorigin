@@ -36,6 +36,31 @@ export type QuizLog = {
   timestamp: string;
 };
 
+export type QuizSurveyOption = {
+  id: string;
+  label: string;
+};
+
+export type QuizSurveyQuestion = {
+  id: string;
+  prompt: string;
+  required: boolean;
+  sortOrder: number;
+  updatedAt: string;
+  options: QuizSurveyOption[];
+};
+
+export type QuizSurveyAnswer = {
+  id: string;
+  sessionId: string;
+  runId: string;
+  questionId: string;
+  optionId: string;
+  questionPrompt: string;
+  optionLabel: string;
+  timestamp: string;
+};
+
 export type QuizLogDocument = {
   logs: QuizLog[];
   cards?: QuizCardConfig[];
