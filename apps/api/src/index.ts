@@ -50,16 +50,13 @@ const trendStore = new TrendStore(
   process.env.TREND_DATA_FILE ?? "/opt/origin/shared/trend-snapshots.json",
 );
 const quizStore = new QuizStore(
-  process.env.QUIZ_LOG_FILE ?? "./.data/quiz-logs.json",
+  process.env.QUIZ_LOG_FILE ?? "/opt/origin/shared/quiz-logs.json",
 );
 const metadataSuggestionService = new MetadataSuggestionService(
   process.env.GEMMA_API_KEY ?? "",
   process.env.GEMMA_MODEL ?? "gemma-4-26b-a4b-it",
   process.env.METADATA_ALLOWED_HOSTS ?? "",
 );
-
-await categoryStore.ensureDefaults();
-await memeStore.ensureDefaults();
 
 await app.register(cors, {
   origin:

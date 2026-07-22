@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
-import { defaultCategories } from "./category-defaults.js";
 import type { Category, CategoryDocument, CategoryInput } from "./category-types.js";
 
 export class CategoryStore {
@@ -55,20 +54,6 @@ export class CategoryStore {
     return result;
   }
 
-  async ensureDefaults() {
-    await this.serialWrite(async () => {
-      const document = await this.read();
-      const existingIds = new Set(document.items.map((item) => item.id));
-      const existingSlugs = new Set(document.items.map((item) => item.slug));
-      const missing = defaultCategories.filter(
-        (category) => !existingIds.has(category.id) && !existingSlugs.has(category.slug),
-      );
-      if (!missing.length) return;
-      document.items.push(...structuredClone(missing));
-      await this.write(document);
-    });
-  }
-
   private async serialWrite(operation: () => Promise<void>) {
     this.writeQueue = this.writeQueue.then(operation, operation);
     await this.writeQueue;
@@ -77,10 +62,10 @@ export class CategoryStore {
   private async read(): Promise<CategoryDocument> {
     try {
       const parsed = JSON.parse(await readFile(this.filePath, "utf8")) as CategoryDocument;
-      return Array.isArray(parsed.items) ? parsed : { items: structuredClone(defaultCategories) };
+      return Array.isArray(parsed.items) ? parsed : { items: [] };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-        return { items: structuredClone(defaultCategories) };
+        return { items: [] };
       }
       throw error;
     }
