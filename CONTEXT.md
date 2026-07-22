@@ -7,7 +7,7 @@
 ## Current architecture
 
 - pnpm workspace monorepo
-- `apps/web`: Next.js App Router, React, TypeScript, Tailwind CSS
+- `apps/web`: Next.js App Router, React, TypeScript, Tailwind CSS. Vercel에서는 ISR, GitHub Pages·Oracle 정적 배포에서는 static export로 빌드한다.
 - `apps/admin`: `/viral` basePath의 정적 Next.js 관리자 화면
 - `apps/api`: Fastify, TypeScript, Node.js 22
 - `packages/ui`: web/admin 공용 디자인 토큰과 도메인 비의존 UI primitive

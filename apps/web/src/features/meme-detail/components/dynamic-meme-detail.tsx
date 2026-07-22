@@ -11,13 +11,13 @@ import type { Meme } from "@/types/meme";
 import { MemeDetail } from "./meme-detail";
 import { applyMemeSeo } from "../lib/apply-meme-seo";
 
-export function DynamicMemeDetail() {
+export function DynamicMemeDetail({ initialMeme = null }: { initialMeme?: Meme | null }) {
   const pathname = usePathname();
   const pathSlug = pathname.match(/^\/memes\/([^/]+)\/?$/)?.[1];
   const slug = (useSearchParams().get("slug") ?? pathSlug ?? "").trim().toLowerCase();
-  const [meme, setMeme] = useState<Meme | null>(null);
+  const [meme, setMeme] = useState<Meme | null>(initialMeme);
   const [otherMemes, setOtherMemes] = useState<Meme[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialMeme);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -69,9 +69,9 @@ export function DynamicMemeDetail() {
   }, [slug]);
 
   useEffect(() => {
-    if (!meme) return;
+    if (!meme || initialMeme) return;
     return applyMemeSeo(meme);
-  }, [meme]);
+  }, [initialMeme, meme]);
 
   if (!slug) {
     return (

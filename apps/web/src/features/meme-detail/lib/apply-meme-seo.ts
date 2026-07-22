@@ -1,5 +1,7 @@
 import type { Meme } from "@/types/meme";
 
+import { buildMemeSeo } from "./meme-seo";
+
 const upsertMeta = (selector: string, attributes: Record<string, string>) => {
   let element = document.head.querySelector<HTMLMetaElement>(selector);
   if (!element) {
@@ -16,23 +18,11 @@ export function applyMemeSeo(meme: Meme) {
   const originalDescription = existingDescription?.content;
   const existingCanonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
   const originalCanonical = existingCanonical?.href;
-  const canonicalUrl = `https://viralorigin.vercel.app/memes/${encodeURIComponent(meme.slug)}`;
-  const challengeLabel = meme.kind === "challenge" ? " 챌린지" : "";
-  const aliases = meme.aliases.slice(0, 6);
-  const aliasKeywords = aliases.map((alias) => `${alias} 원조`).join(", ");
-  const title = `${meme.title}${challengeLabel} 원조·원본${aliases[0] ? ` | ${aliases[0]} 원조` : ""} | ViralOrigin`;
-  const description = `${meme.title} 원본과 ${meme.title}${challengeLabel} 원조를 근거와 타임라인으로 확인하세요.${aliasKeywords ? ` ${aliasKeywords}로도 불리는 같은 유행의 시작과 확산 과정을 정리합니다.` : ""}`;
-  const keywords = [
-    `${meme.title} 원본`,
-    `${meme.title} 원조`,
-    ...(meme.kind === "challenge" ? [`${meme.title} 챌린지 원조`, `${meme.title} 챌린지 원본`] : []),
-    ...aliases.flatMap((alias) => [`${alias} 원본`, `${alias} 원조`]),
-    ...meme.tags,
-  ].join(", ");
+  const { canonicalUrl, description, jsonLd: structuredData, keywords, title } = buildMemeSeo(meme);
 
   document.title = title;
   upsertMeta('meta[name="description"]', { name: "description", content: description });
-  upsertMeta('meta[name="keywords"]', { name: "keywords", content: keywords });
+  upsertMeta('meta[name="keywords"]', { name: "keywords", content: keywords.join(", ") });
   upsertMeta('meta[property="og:title"]', { property: "og:title", content: title });
   upsertMeta('meta[property="og:description"]', { property: "og:description", content: description });
   upsertMeta('meta[property="og:url"]', { property: "og:url", content: canonicalUrl });
@@ -49,21 +39,11 @@ export function applyMemeSeo(meme: Meme) {
   canonical.href = canonicalUrl;
 
   document.head.querySelector('script[data-viralorigin-seo="jsonld"]')?.remove();
-  const jsonLd = document.createElement("script");
-  jsonLd.type = "application/ld+json";
-  jsonLd.dataset.viraloriginSeo = "jsonld";
-  jsonLd.text = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: `${meme.title}${challengeLabel} 원본과 원조`,
-    alternateName: aliases,
-    description,
-    url: canonicalUrl,
-    dateModified: meme.origin.lastReviewedAt,
-    keywords,
-    isPartOf: { "@type": "WebSite", name: "ViralOrigin", url: "https://viralorigin.vercel.app" },
-  });
-  document.head.appendChild(jsonLd);
+  const jsonLdElement = document.createElement("script");
+  jsonLdElement.type = "application/ld+json";
+  jsonLdElement.dataset.viraloriginSeo = "jsonld";
+  jsonLdElement.text = JSON.stringify(structuredData);
+  document.head.appendChild(jsonLdElement);
 
   return () => {
     document.title = originalTitle;

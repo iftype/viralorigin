@@ -4,10 +4,6 @@
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':(top)apps/web' ':(top)packages/ui'",
   "rewrites": [
     {
-      "source": "/memes/:slug",
-      "destination": "/meme?slug=:slug"
-    },
-    {
       "source": "/sitemap.xml",
       "destination": "https://meme.iftype.store/api/v1/sitemap.xml"
     },

@@ -1,7 +1,7 @@
 export type MainTab = "feed" | "dictionary";
 
 function isDictionaryPath(pathname: string) {
-  return /\/memes\/?$/.test(pathname);
+  return /\/memes(?:\/[^/]+)?\/?$/.test(pathname) || /\/meme\/?$/.test(pathname);
 }
 
 export function resolveMainTab(
